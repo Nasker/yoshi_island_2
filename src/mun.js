@@ -5,6 +5,12 @@
 //   gWorld → tot el món del nivell (plataformes, bosses, partícules...)
 // Els personatges i fruites són SPRITES fets amb les textures de art.js.
 let gBG = null, gWorld = null, bgGrad = null, ESCENA = null;
+
+// és fora de la pantalla? (per no dibuixar coses que no es veuen!)
+function offscreen(x, marge) {
+  marge = marge || 60;
+  return x + marge < camX - 60 || x - marge > camX + W + 60;
+}
 let inCave = false;   // (cova secreta: de moment no s'usa, però la idea hi és!)
 // (les "ceres" per dibuixar — fillRect, fillCirc, corba... — són a config.js)
 
@@ -491,14 +497,16 @@ function drawDecor() {
   if (levelNum === 3) {
     // estrelles grans que decoren el cel espacial
     for (const sx of [200, 800, 1400, 2100, 2700, 3300, 3900, 4550, 5200, 5900, 6400])
-      stamp('decor_star_' + sx, 'star', sx, 120 + (sx % 3) * 40,
+        if (!offscreen(sx, 220))
+        stamp('decor_star_' + sx, 'star', sx, 120 + (sx % 3) * 40,
             {alpha: 0.5 + 0.5 * Math.sin(frame * 0.07 + sx)});
     return;
   }
   if (levelNum === 2) {
     // torxes penjades a les parets del castell
     for (const tx of [150, 700, 1300, 1900, 2450, 3000, 3600, 4100])
-      stamp('decor_torch_' + tx, 'torch', tx, 385,
+        if (!offscreen(tx, 220))
+        stamp('decor_torch_' + tx, 'torch', tx, 385,
             {alpha: 0.7 + 0.3 * Math.sin(frame * 0.2 + tx)});   // la flama tremola!
     return;
   }
@@ -519,6 +527,7 @@ function drawDecor() {
     }
     // bastons de caramel al costat del riu!
     for (const cx of [180, 1250, 2300, 3150]) {
+      if (offscreen(cx, 220)) continue;
       fillRect(g, cx, 370, 14, 70, '#ffffff');
       for (let y = 375; y < 435; y += 14) fillRect(g, cx, y, 14, 7, '#ff5252');
       fillSemi(g, cx + 7, 370, 9, '#ff5252');
@@ -528,6 +537,7 @@ function drawDecor() {
   if (levelNum === 7) {
     // PALMERES de la selva amb cocos!
     for (const px of [150, 750, 1150, 1800, 2350, 2900, 3450, 4000, 4600, 5250]) {
+      if (offscreen(px, 220)) continue;
       corba(g, px, 480, px + 12, 400, px + 25, 330, '#8d6e63', 14);
       for (let a = -2; a <= 2; a++)
         corba(g, px + 25, 330, px + 25 + a*35, 295,
@@ -537,6 +547,7 @@ function drawDecor() {
     }
     // lianes que pengen i es mouen amb el vent!
     for (const vx of [450, 1350, 2250, 3150, 4050, 4950]) {
+      if (offscreen(vx, 220)) continue;
       const swing = Math.sin(frame * 0.05 + vx) * 25;
       corba(g, vx, 0, vx + swing * 0.7, 120, vx + swing, 215, '#388e3c', 5);
       fillElli(g, vx + swing, 222, 8, 12, '#66bb6a');
@@ -546,6 +557,7 @@ function drawDecor() {
   if (levelNum === 10) {
     // ESTENDARDS vermells amb la U d'Unai penjant del sostre! 🚩
     for (const bx of [300, 900, 1900, 2800, 3400, 4300, 5100, 5800]) {
+      if (offscreen(bx, 220)) continue;
       g.fillStyle(col('#c62828').color, 1);
       g.beginPath();
       g.moveTo(bx, 0); g.lineTo(bx + 56, 0); g.lineTo(bx + 56, 130);
@@ -555,6 +567,7 @@ function drawDecor() {
     }
     // torxes a les parets de les torres!
     for (const tx2 of [500, 1700, 2800, 3900, 5000, 5900]) {
+      if (offscreen(tx2, 220)) continue;
       fillRect(g, tx2, 300, 10, 24, '#5d4037');
       fillElli(g, tx2 + 5, 292 + Math.sin(frame*0.15 + tx2)*4, 9, 14, '#ff9800');
       fillElli(g, tx2 + 5, 294 + Math.sin(frame*0.15 + tx2)*4, 5, 8, '#ffeb3b');
@@ -569,6 +582,7 @@ function drawDecor() {
     fillRect(g, 30, 298, 210, 8, '#8e0000');
     // ARBRES DE SAKURA! 🌸 tronc corbat + bombolles rosa de flors
     for (const tx of [350, 800, 1400, 1950, 2500, 3050]) {
+      if (offscreen(tx, 220)) continue;
       corba(g, tx, 480, tx + 10, 400, tx + 25, 345, '#6d4c41', 12);
       corba(g, tx + 14, 415, tx + 45, 390, tx + 60, 365, '#795548', 6);
       fillCirc(g, tx + 25, 320, 52, '#ffb7d5');
@@ -579,10 +593,12 @@ function drawDecor() {
     }
     // llisos de pedra japonesos al camí
     for (const lx of [500, 1200, 1800, 2400, 2900])
-      fillElli(g, lx, 470, 22, 8, '#9e9e9e');
+        if (!offscreen(lx, 220))
+        fillElli(g, lx, 470, 22, 8, '#9e9e9e');
     // núvols de fons al tram dels núvols!
     if (player.x > 6800) {
       for (const cx of [7100, 7600, 8100, 8600, 9000]) {
+      if (offscreen(cx, 220)) continue;
         fillCirc(g, cx, 120 + (cx % 3) * 40, 55, 'rgba(255,255,255,0.5)');
         fillCirc(g, cx + 45, 130 + (cx % 3) * 40, 40, 'rgba(255,255,255,0.5)');
       }
@@ -592,6 +608,7 @@ function drawDecor() {
   if (levelNum === 8) {
     // cables que pengen amb bombetes vermelles que parpellegen!
     for (const cx of [300, 900, 1700, 2500, 3300, 4200, 5000, 5800, 6600, 7400, 8300]) {
+      if (offscreen(cx, 220)) continue;
       const len = 60 + (cx % 3) * 30;
       const sway = Math.sin(frame * 0.04 + cx) * 15;
       linea(g, cx, 0, cx + sway, len, '#37474f', 6);
@@ -608,6 +625,7 @@ function drawDecor() {
     }
     // vàlvules vermelles a les canonades!
     for (const vx2 of [500, 1500, 2600, 3700, 4800, 5900, 7000, 7700]) {
+      if (offscreen(vx2, 220)) continue;
       strokeCirc(g, vx2, 140, 16, '#c62828', 5);
       for (let a = 0; a < 4; a++) {
         const an = a * Math.PI / 2 + 0.4;
@@ -620,6 +638,7 @@ function drawDecor() {
     // SENYALS DE NEÓ de Tòquio que parpellegen!! 🌃
     const neonCols = ['#ff2d78', '#00e5ff', '#ffea00', '#76ff03'];
     for (const nx of [600, 1350, 2200, 3100, 4500, 5600, 7200, 8000, 9200, 10200, 11000]) {
+      if (offscreen(nx, 220)) continue;
       const on = (frame + nx) % 80 < 55;
       const ny = 170 + (nx % 4) * 40;
       fillRect(g, nx, ny, 26, 76, on ? neonCols[(nx / 450 | 0) % 4] : '#37474f');
@@ -629,12 +648,14 @@ function drawDecor() {
     }
     // TORIIS vermells a la zona del temple! ⛩️
     for (const tx of [3650, 4150, 4650]) {
+      if (offscreen(tx, 220)) continue;
       fillRect(g, tx, 300, 16, 180, '#d32f2f');      fillRect(g, tx + 130, 300, 16, 180, '#d32f2f');
       fillRect(g, tx - 20, 280, 186, 18, '#d32f2f'); fillRect(g, tx - 5, 330, 156, 12, '#d32f2f');
       fillRect(g, tx - 20, 298, 186, 8, '#8e0000');
     }
     // arbres de sakura rosa escampats pels carrers 🌸
     for (const tx of [400, 1600, 6600, 7900, 11400]) {
+      if (offscreen(tx, 220)) continue;
       fillRect(g, tx, 440, 12, 40, '#6d4c41');
       fillCirc(g, tx + 6, 425, 26, '#ffb7d5');
       fillCirc(g, tx - 12, 438, 16, '#ffb7d5');
@@ -645,6 +666,7 @@ function drawDecor() {
   if (levelNum === 1) {
     // CACTUS del desert! 🌵
     for (const cx of [250, 850, 1050, 2000, 2550]) {
+      if (offscreen(cx, 220)) continue;
       fillRect(g, cx, 408, 18, 72, '#2e7d32');
       fillRect(g, cx - 14, 426, 14, 10, '#2e7d32'); fillRect(g, cx - 14, 412, 8, 16, '#2e7d32');
       fillRect(g, cx + 18, 436, 14, 10, '#2e7d32'); fillRect(g, cx + 24, 420, 8, 18, '#2e7d32');
@@ -652,19 +674,24 @@ function drawDecor() {
     }
     // torxes que tremolen a la MASMORRA del castell!
     for (const tx of [3100, 3700, 4300, 4900, 5500])
-      stamp('decor_torch_' + tx, 'torch', tx, 385,
+        if (!offscreen(tx, 220))
+        stamp('decor_torch_' + tx, 'torch', tx, 385,
             {alpha: 0.7 + 0.3 * Math.sin(frame * 0.2 + tx)});
     // floretes del pati-jardí!
     for (const fx of [6300, 6520, 6700, 7650, 7820, 8000, 8500])
-      stamp('decor_flower_' + fx, 'flower', fx, 435);
+        if (!offscreen(fx, 220))
+        stamp('decor_flower_' + fx, 'flower', fx, 435);
     for (const mx of [6600, 7850])
-      stamp('decor_mush_' + mx, 'mush', mx, 462);
+        if (!offscreen(mx, 220))
+        stamp('decor_mush_' + mx, 'mush', mx, 462);
     return;
   }
   for (const tx of [80, 550, 720, 1100, 1700, 2200, 2750, 3100, 3500])
-    stamp('decor_tree_' + tx, 'tree', tx, 480 - 24);
+      if (!offscreen(tx, 220))
+      stamp('decor_tree_' + tx, 'tree', tx, 480 - 24);
   for (const mx of [950, 1900, 2600, 3850])
-    stamp('decor_mush_' + mx, 'mush', mx, 480 - 18);
+      if (!offscreen(mx, 220))
+      stamp('decor_mush_' + mx, 'mush', mx, 480 - 18);
 }
 
 // ==================== LIQUIDS QUE BULLEN ====================
@@ -873,7 +900,8 @@ function drawDoor(d) {
   fillRect(g, d.x, d.y + 16, d.w, d.h - 16, '#b71c1c');
   // taulons de fusta
   for (const lx of [d.x + d.w*0.33, d.x + d.w*0.66])
-    linea(g, lx, d.y + 20, lx, d.y + d.h, '#7f0000', 3);
+      if (!offscreen(lx, 220))
+      linea(g, lx, d.y + 20, lx, d.y + d.h, '#7f0000', 3);
   // llamp decoratiu dalt de tot ⚡
   const mx = d.x + d.w/2;
   g.lineStyle(4, col('#ffee58').color, 1);

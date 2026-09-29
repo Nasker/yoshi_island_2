@@ -591,6 +591,10 @@ function netejaSprites() {
 }
 function posa(obj, tex, x, y, opts) {
   const im = spriteDe(obj, tex);
+  if (x + 200 < camX - 40 || x - 200 > camX + W + 40) {   // fora de vista → amagat!
+    im.setVisible(false);
+    return im;
+  }
   im.setTexture(tex);
   im.setPosition(x, y);
   opts = opts || {};
@@ -608,13 +612,14 @@ function syncMon() {
   drawBackground();
   gWorld.clear(); gTop.clear();
   // TREMOLOR quan hi ha explosions!
-  // (+320,+180 perquè el zoom de la càmera gira al voltant del CENTRE de la pantalla)
-  CAM.setScroll(camX + 320 + (Math.random()-0.5) * shake,
-                camY + 180 + (Math.random()-0.5) * shake);
+  // (+240,+135 perquè el zoom de la càmera gira al voltant del CENTRE de la pantalla)
+  CAM.setScroll(camX + 240 + (Math.random()-0.5) * shake,
+                camY + 135 + (Math.random()-0.5) * shake);
 
   drawDecor();
   drawLiquids();
-  for (const pl of platforms) drawPlatform(pl);
+  for (const pl of platforms)
+    if (pl.x + pl.w > camX - 80 && pl.x < camX + W + 80) drawPlatform(pl);
   for (const t of pipes) drawPipe(t);
   for (const d of doors) drawDoor(d);
   if (levelNum === 1) drawCastle(7950);   // el castell del pati, al costat de la bandera!
@@ -724,7 +729,7 @@ function hudText(id, str, x, y, opts) {
     hudTextos[id] = t;
   }
   if (t.text !== str) t.setText(str);
-  t.setPosition(x - 320, y - 180);   // (el zoom gira al voltant del centre: això ho desfà)
+  t.setPosition(x - 240, y - 135);   // (el zoom gira al voltant del centre: això ho desfà)
   if (opts.color) t.setColor(opts.color);
   if (opts.font) t.setFontFamily(opts.font);
   if (opts.size) t.setFontSize(opts.size);
@@ -739,7 +744,7 @@ function hudImg(id, tex, x, y, opts) {
     im.setScale(S); im.setOrigin(0, 0); im.setScrollFactor(0); im.setDepth(24);
     stampPool['hud_' + id] = im;
   }
-  im.setTexture(tex); im.setPosition(x - 320, y - 180);   // (com els textos)
+  im.setTexture(tex); im.setPosition(x - 240, y - 135);   // (com els textos)
   im.setAlpha(opts && opts.alpha !== undefined ? opts.alpha : 1);
   im.setVisible(true);
   return im;
@@ -803,7 +808,7 @@ function drawHUD() {
 // ===== PANTALLA DE TRIAR NIVELL =====
 function drawSelect() {
   drawBackground();
-  CAM.setScroll(320, 180);
+  CAM.setScroll(240, 135);
   gWorld.clear(); gTop.clear();
   gUI.clear();
   amagaPiscines();
@@ -848,21 +853,21 @@ class EscenaJoc extends Phaser.Scene {
   create() {
     ESCENA = this;
     CAM = this.cameras.main;
-    CAM.setZoom(1/3);   // 960 unitats de món → 320 píxels de pantalla
+    CAM.setZoom(0.5);   // 960 unitats de món → 480 píxels de pantalla
     bakeTextures(this);
     if (this.textures.exists('poshi')) POSHI_TEX = 'poshi';
 
     // les tres "eines de dibuix": fons / món / a sobre del jugador
     // TRUC: el zoom gira al voltant del centre de la pantalla, així que totes
-    // les coses "fixes" (scrollFactor 0) es desplacen (-320, -180) i quadren!
-    bgGrad = this.add.image(-320, -180, 'grad_default')
+    // les coses "fixes" (scrollFactor 0) es desplacen (-240, -135) i quadren!
+    bgGrad = this.add.image(-240, -135, 'grad_default')
       .setOrigin(0, 0).setDisplaySize(W, H).setScrollFactor(0).setDepth(-20);
     gBG = this.add.graphics().setScrollFactor(0).setDepth(-10);
-    gBG.setPosition(-320, -180);
+    gBG.setPosition(-240, -135);
     gWorld = this.add.graphics().setDepth(0);
     gTop = this.add.graphics().setDepth(10);
     gUI = this.add.graphics().setScrollFactor(0).setDepth(20);
-    gUI.setPosition(-320, -180);
+    gUI.setPosition(-240, -135);
 
     // entrades: el teclat del joc
     this.input.keyboard.on('keydown', e => {
@@ -905,12 +910,12 @@ let gPaper = null;
 function graPaper() {
   if (!gPaper) {
     gPaper = ESCENA.add.graphics().setScrollFactor(0).setDepth(30);
-    gPaper.setPosition(-320, -180);
+    gPaper.setPosition(-240, -135);
   }
   gPaper.clear();
   gPaper.fillStyle(0xffffff, 0.05);
   for (let i = 0; i < 120; i++)
-    gPaper.fillRect(Math.random() * W, Math.random() * H, 3, 3);   // 3 unitats = 1 píxel
+    gPaper.fillRect(Math.random() * W, Math.random() * H, 2, 2);   // 2 unitats = 1 píxel
 }
 
 // ==================== ARRENCAR! ====================
@@ -919,9 +924,9 @@ function graPaper() {
 const joc = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'joc',
-  width: 320,
-  height: 180,
-  zoom: 3,
+  width: 480,
+  height: 270,
+  zoom: 2,
   pixelArt: true,
   roundPixels: true,
   scene: [EscenaJoc]
