@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<title>Editor de nivells — El joc d'Unai</title>
+<style>
+  body { margin:0; background:#1a2b4a; color:#fff; font-family:'Comic Sans MS',sans-serif; }
+  header { padding:8px 12px; }
+  h1 { margin:0; font-size:20px; }
+  .barra { display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:6px 12px; }
+  button, select, input { font-family:inherit; font-size:14px; border-radius:8px; border:2px solid #444; padding:4px 8px; }
+  button { background:#3b5998; color:#fff; cursor:pointer; }
+  button.actiu { background:#ffd700; color:#222; border-color:#a80; }
+  button.punts { background:#6a8f3b; }
+  button.esborra { background:#8f3b3b; }
+  button.genera { background:#3b8f5e; font-weight:bold; }
+  input[type=number] { width:64px; }
+  #editor { display:block; border:6px solid #222; border-radius:10px; margin:4px 12px; background:#87CEEB; cursor:crosshair; }
+  #codi { width:calc(100% - 30px); height:180px; margin:8px 12px; font-family:monospace; font-size:12px; }
+  .ajuda { font-size:13px; opacity:.85; padding:0 12px 8px; }
+  .sep { border-left:2px solid #fff3; height:20px; }
+</style>
+</head>
+<body>
+<header><h1>🖍️ Editor de nivells — dibuixa el teu món!</h1></header>
+
+<div class="barra">
+  <label>Nivell nº <input id="num" type="number" value="15" min="15"></label>
+  <label>Amplada del món <input id="ample" type="number" value="3000" step="500"></label>
+  <label>Títol <input id="titol" type="text" value="El meu nivell!" size="16"></label>
+  <button class="genera" onclick="genera()">✨ Genera el codi!</button>
+  <button onclick="descarrega()">💾 Descarrega</button>
+  <button class="esborra" onclick="desfes()">↩︎ Desfés</button>
+  <button class="esborra" onclick="buida()">🗑️ Buida-ho tot</button>
+</div>
+
+<div class="barra" id="paleta"></div>
+
+<canvas id="editor" width="960" height="432"></canvas>
+<div class="ajuda">
+  📜 Mou la càmera amb ← → o amb la rodeta del ratolí.
+  🟦 Amb una plataforma triada: arrossega per dibuixar-la.
+  🐤 Amb un objecte triat: clica per posar-lo. Els enemics fan patrol de ±80px.
+  🚩 "Bandera" tria on acaba el nivell. ↩︎ Desfés treu l'última cosa posada.
+</div>
+<textarea id="codi" placeholder="Aquí sortirà el codi del teu nivell! Còpia'l a un fitxer nivell15.js dins de levels/ (o prem Descarrega)" readonly></textarea>
+
+<script>
+// ==================== L'EDITOR DE NIVELLS ====================
+// Eina per dibuixar nivells del joc del Poshi. 1 píxel del món = 1 píxel aquí!
+const cv = document.getElementById('editor');
+const cx = cv.getContext('2d');
+let camX = 0;
+
+// ---- la caixa d'eines ----
+const PLAT = [['ground','🟩 terra','#6fdc7f'], ['rock','🪨 roca','#6b5b8f'],
+  ['sand','🏜️ sorra','#e8c46a'], ['snow','❄️ neu','#eef4ff'], ['cloud','☁️ núvol','#ffffff'],
+  ['balloon','🎈 globus','#ff9fd4'], ['spikes','🔺 punxes','#90a4ae'],
+  ['metal','🔩 metall','#9e9e9e'], ['lego','🧱 lego','#ef5350'], ['night','🌙 nit','#3a3a6e'],
+  ['party','🎉 festa','#ffd54f'], ['tower','🗼 torre','#7e57c2'], ['choco','🍫 xoco','#8d6e63'],
+  ['qblock','❓ bloc ?','#ffb300']];
+const COSA = [['shy','🔴 shy'], ['fly','🪰 mosca'], ['spiky','🦔 eriço'],
+  ['peix','🐟 peix'], ['caca','💩 caca'], ['planta','🌷 planta'], ['mina','💣 mina'],
+  ['cor','❤️ cor'], ['estrella','⭐ estrella'], ['trampolin','🍄 trampolí'],
+  ['apple','🍎 poma'], ['grape','🍇 raïm'], ['melon','🍈 meló'], ['coin','🪙 moneda'],
+  ['bandera','🚩 bandera']];
+const COLORS_COSA = {shy:'#e53935', fly:'#7e57c2', spiky:'#ec407a', peix:'#29b6f6',
+  caca:'#8d6e63', planta:'#43a047', mina:'#37474f', cor:'#ff6f91', estrella:'#ffd700',
+  trampolin:'#ff5252', apple:'#e53935', grape:'#8e24aa', melon:'#fdd835', coin:'#ffb300',
+  bandera:'#4fc3f7'};
+
+let eina = 'ground';              // eina triada
+let mode = 'plataforma';          // 'plataforma' o 'cosa'
+const plataformes = [];           // {x,y,w,h,type}
+const coses = [];                 // {k,x,y}
+let bandera = null;               // {x,y}
+
+const paleta = document.getElementById('paleta');
+function boto(txt, val, m) {
+  const b = document.createElement('button');
+  b.textContent = txt;
+  b.onclick = () => { eina = val; mode = m; pintaPaleta(); };
+  b.dataset.val = val;
+  paleta.appendChild(b);
+}
+PLAT.forEach(([v, t]) => boto(t, v, 'plataforma'));
+paleta.insertAdjacentHTML('beforeend', '<span class="sep"></span>');
+COSA.forEach(([v, t]) => boto(t, v, 'cosa'));
+function pintaPaleta() {
+  for (const b of paleta.children)
+    b.classList.toggle('actiu', b.dataset.val === eina);
+}
+pintaPaleta();
+
+// ---- dibuixar ----
+function pinta() {
+  const ample = +document.getElementById('ample').value;
+  // cel + quadrícula
+  cx.fillStyle = '#87CEEB'; cx.fillRect(0, 0, 960, 432);
+  cx.strokeStyle = '#fff3'; cx.lineWidth = 1;
+  for (let x = -camX % 40; x < 960; x += 40) { cx.beginPath(); cx.moveTo(x,0); cx.lineTo(x,432); cx.stroke(); }
+  for (let y = 0; y < 432; y += 40) { cx.beginPath(); cx.moveTo(0,y); cx.lineTo(960,y); cx.stroke(); }
+  // línia de terra (y=480 del món està just per sota — la finestra ensoira y=60..492)
+  cx.fillStyle = '#0002'; cx.fillRect(0, 420, 960, 12);
+  cx.fillStyle = '#fff'; cx.font = 'bold 12px monospace';
+  cx.fillText('terra y=480 →', 6, 430);
+
+  // límit del món
+  const fiX = ample - camX;
+  if (fiX < 960) { cx.fillStyle = '#f006'; cx.fillRect(fiX, 0, 960 - fiX, 432); }
+
+  const deplat = PLAT.find(p => p[0]);
+  for (const p of plataformes) {
+    const color = (PLAT.find(q => q[0] === p.type) || [0,0,'#999'])[2];
+    cx.fillStyle = color;
+    cx.fillRect(p.x - camX, p.y - 60, p.w, p.h);
+    cx.strokeStyle = '#0006'; cx.strokeRect(p.x - camX, p.y - 60, p.w, p.h);
+    if (p.hurt) {
+      cx.fillStyle = '#c62828';
+      for (let sx = p.x - camX; sx < p.x - camX + p.w; sx += 14) {
+        cx.beginPath(); cx.moveTo(sx, p.y-60+p.h); cx.lineTo(sx+7, p.y-60); cx.lineTo(sx+14, p.y-60+p.h); cx.fill();
+      }
+    }
+  }
+  for (const c of coses) {
+    cx.fillStyle = COLORS_COSA[c.k] || '#333';
+    cx.beginPath(); cx.arc(c.x - camX, c.y - 60, 11, 0, 7); cx.fill();
+    cx.strokeStyle = '#0008'; cx.stroke();
+    cx.fillStyle = '#fff'; cx.font = 'bold 10px monospace';
+    cx.textAlign = 'center';
+    cx.fillText(c.k.slice(0,3), c.x - camX, c.y - 56);
+    if (['shy','fly','peix','caca','spiky'].includes(c.k)) {
+      // patrol de l'enemic
+      cx.strokeStyle = '#0004'; cx.strokeRect(c.x - 80 - camX, c.y - 60 - 20, 160, 20);
+    }
+  }
+  if (bandera) {
+    cx.strokeStyle = '#333'; cx.lineWidth = 4;
+    cx.beginPath(); cx.moveTo(bandera.x - camX, bandera.y - 60); cx.lineTo(bandera.x - camX, bandera.y - 60 - 90); cx.stroke();
+    cx.fillStyle = '#4fc3f7';
+    cx.beginPath(); cx.moveTo(bandera.x - camX, bandera.y - 60 - 90);
+    cx.lineTo(bandera.x - camX + 60, bandera.y - 60 - 68);
+    cx.lineTo(bandera.x - camX, bandera.y - 60 - 46); cx.fill();
+    cx.lineWidth = 1;
+  }
+  cx.textAlign = 'left';
+}
+
+// ---- ratolí ----
+let arrossegant = null;
+cv.addEventListener('mousedown', e => {
+  const r = cv.getBoundingClientRect();
+  const x = e.clientX - r.left + camX, y = e.clientY - r.top + 60;
+  if (mode === 'plataforma') arrossegant = {x0: x, y0: y, x1: x, y1: y};
+  else if (eina === 'bandera') bandera = {x, y};
+  else coses.push({k: eina, x, y});
+  pinta();
+});
+cv.addEventListener('mousemove', e => {
+  if (!arrossegant) return;
+  const r = cv.getBoundingClientRect();
+  arrossegant.x1 = e.clientX - r.left + camX;
+  arrossegant.y1 = e.clientY - r.top + 60;
+  pinta();
+  const p = norm(arrossegant);
+  cx.fillStyle = '#0005'; cx.fillRect(p.x - camX, p.y - 60, p.w, p.h);
+});
+cv.addEventListener('mouseup', () => {
+  if (!arrossegant) return;
+  const p = norm(arrossegant);
+  if (p.w > 8 && p.h > 8)
+    plataformes.push({x: p.x, y: p.y, w: p.w, h: p.h, type: eina, hurt: eina === 'spikes'});
+  arrossegant = null;
+  pinta();
+});
+function norm(a) {
+  const x = Math.min(a.x0, a.x1), y = Math.min(a.y0, a.y1);
+  return {x: Math.round(x/10)*10, y: Math.round(y/10)*10,
+          w: Math.round(Math.abs(a.x1-a.x0)/10)*10, h: Math.round(Math.abs(a.y1-a.y0)/10)*10};
+}
+
+// ---- càmera ----
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight') camX += 120;
+  if (e.key === 'ArrowLeft')  camX = Math.max(0, camX - 120);
+  pinta();
+});
+cv.addEventListener('wheel', e => { e.preventDefault(); camX = Math.max(0, camX + (e.deltaY > 0 ? 120 : -120)); pinta(); }, {passive: false});
+
+function desfes() { if (coses.length) coses.pop(); else if (plataformes.length) plataformes.pop(); pinta(); }
+function buida() { if (confirm('Segur que vols esborrar TOT?')) { plataformes.length = 0; coses.length = 0; bandera = null; pinta(); } }
+
+// ---- exportar ----
+function generaCodi() {
+  const n = +document.getElementById('num').value;
+  const ample = +document.getElementById('ample').value;
+  const titol = document.getElementById('titol').value;
+  const fl = bandera || {x: ample - 150, y: 380};
+  let s = `// Nivell ${n} fet amb l'editor! 🖍️\nregistraNivell(${n}, {\n`;
+  s += `  titol: '${titol}',\n  fi: ${ample}, flag: [${fl.x}, ${fl.y}], seguent: 0,\n`;
+  s += '  plataformes: [\n';
+  for (const p of plataformes)
+    s += `    {x:${p.x}, y:${p.y}, w:${p.w}, h:${p.h}, type:'${p.type}'${p.hurt ? ', hurt:true' : ''}},\n`;
+  s += '  ],\n  enemics: [\n';
+  for (const c of coses)
+    if (['shy','fly','peix','caca','spiky'].includes(c.k)) {
+      const tipus = c.k === 'fly' || c.k === 'peix' ? `['${c.k}', ${c.x}, ${c.x-80}, ${c.x+80}, ${c.y}]`
+                                                  : `['${c.k}', ${c.x}, ${c.x-80}, ${c.x+80}, 'red', ${c.y+20}]`;
+      s += '    ' + tipus + ',\n';
+    }
+  s += '  ],\n';
+  const plantes = coses.filter(c => c.k === 'planta');
+  if (plantes.length) s += '  plantes: [' + plantes.map(c => `[${c.x}, ${c.y}]`).join(', ') + '],\n';
+  const mines = coses.filter(c => c.k === 'mina');
+  if (mines.length) s += '  mines: [' + mines.map(c => `[${c.x}, ${c.y}]`).join(', ') + '],\n';
+  const cors = coses.filter(c => c.k === 'cor');
+  if (cors.length) s += '  cors: [' + cors.map(c => `[${c.x}, ${c.y}]`).join(', ') + '],\n';
+  const est = coses.filter(c => c.k === 'estrella');
+  if (est.length) s += '  estrelles: [' + est.map(c => `[${c.x}, ${c.y}]`).join(', ') + '],\n';
+  const tramps = coses.filter(c => c.k === 'trampolin');
+  if (tramps.length) s += '  trampolins: [' + tramps.map(c => `[${c.x}, ${c.y}]`).join(', ') + '],\n';
+  const fruita = coses.filter(c => ['apple','grape','melon','coin'].includes(c.k));
+  if (fruita.length)
+    s += '  fruitaSola: [\n' + fruita.map(c => `    [${c.x}, ${c.y}, '${c.k}'],`).join('\n') + '\n  ],\n';
+  s += '});\n';
+  return s;
+}
+function genera() { document.getElementById('codi').value = generaCodi(); }
+function descarrega() {
+  const n = +document.getElementById('num').value;
+  const blob = new Blob([generaCodi()], {type: 'text/javascript'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `nivell${n}.js`;
+  a.click();
+}
+pinta();
+</script>
+</body>
+</html>
