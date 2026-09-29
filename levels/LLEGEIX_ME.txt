@@ -1,0 +1,28 @@
+COM FER UN NIVELL NOU
+=====================
+
+1. Copia el fitxer "exemple.js" amb un nom nou, per exemple "nivell15.js".
+2. Canvia el número (15) i les dades: plataformes, enemics, fruites...
+3. Afegeix el nom del fitxer a la llista de "manifest.js":
+     const FITXERS_NIVELLS = [
+       'nivell15.js',
+     ];
+4. Obre el joc amb: index.html?nivell=15
+
+Tipus de plataformes que pots fer servir:
+  ground  rock  sand  snow  cloud  balloon  spikes  choco
+  lego  metal  night  party  pipec  tower  qblock
+  extres:  move:true baseY:N amp:N speed:N   → es mou dalt i baix!
+           hurt:true                          → punxa!
+           down:true                          → punxes del sostre
+
+Enemics (files a "enemics"):
+  ['shy',   x, minX, maxX, color, terra]   → Shy Guy que camina
+  ['fly',   x, minX, maxX, altura]         → mosca que vola
+  ['peix',  x, minX, maxX, altura]         → peix que neda
+  ['caca',  x, minX, maxX, terra]          → caca del laberint d'aigües
+  ['spiky', x, minX, maxX, terra]          → eriço que punxa (no es xafa!)
+  ['boss', {x, y, baseY, w, h, vx, minX, maxX, hp}] → BOSS gegant!
+
+Per què el número 15? Els nivells 1-14 ja existeixen!
+Pots fer servir qualsevol número a partir del 15.
