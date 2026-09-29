@@ -16,7 +16,7 @@
     color: white;
   }
   h1 { margin: 10px; font-size: 24px; }
-  #joc canvas {
+  canvas {
     border: 8px solid #222;
     border-radius: 12px;
     background: #87CEEB;
@@ -28,17 +28,14 @@
 </head>
 <body>
 <h1>🦕 El joc d'Unai 👶🏰</h1>
-<div id="joc"></div>
+<canvas id="game" width="960" height="540"></canvas>
 <div class="controls">← → mou-te &nbsp;|&nbsp; ESPAI (mantén) salta i plana &nbsp;|&nbsp; Z llengua &nbsp;|&nbsp; X (mantén i deixa anar) apunta i tira ou &nbsp;|&nbsp; ↓ a sobre d'un tub = secret! &nbsp;|&nbsp; R reinicia</div>
-<div class="controls">Vols veure com era abans? <a href="joc_antic.html" style="color:#8ef0a5">el joc antic</a></div>
 
-<script src="lib/phaser.min.js"></script>
-<script src="src/config.js"></script>
-<script src="src/poshi.js"></script>
-<script src="src/art.js"></script>
-<script src="src/so.js"></script>
-<script src="src/nivells.js"></script>
-<script src="src/mun.js"></script>
-<script src="src/joc.js"></script>
+<script src="js/core.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/poshi.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/draw.js"></script>
+<script src="js/game.js"></script>
 </body>
 </html>

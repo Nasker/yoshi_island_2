@@ -345,6 +345,12 @@ function bakeTextures(scene) {
   bakeArt(scene, 'coin', COIN);
   bakeArt(scene, 'shot', SHOT);
   bakeArt(scene, 'shot_choco', SHOT, {O:'#8d6e63', Y:'#6d4c41'});   // tir de la claveguera
+  // versions BLANQUES: els bosses parpellejen quan els fas mal!
+  bakeArt(scene, 'shy_white_a', SHYGUY_A, {R: '#ffffff'});
+  bakeArt(scene, 'shy_white_b', SHYGUY_B, {R: '#ffffff'});
+  bakeArt(scene, 'fly_white_a', FLY_A, {R: '#ffffff'});
+  bakeArt(scene, 'fly_white_b', FLY_B, {R: '#ffffff'});
+  bakeArt(scene, 'alien_white', ALIEN, {G: '#ffffff'});
   bakeArt(scene, 'alien', ALIEN);
   bakeArt(scene, 'bounce', BOUNCE);
   bakeArt(scene, 'fish', FISH);

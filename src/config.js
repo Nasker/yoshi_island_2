@@ -50,11 +50,40 @@ function hslToRgb(h, s, l) {
 
 // ---------- ajudants de dibuix (Phaser Graphics) ----------
 // omple un rect/cercle/el·lipse amb color CSS
+// (ull: fillEllipse de Phaser vol AMPLADA i ALÇADA, no radis — per això ×2!)
 function fillRect(g, x, y, w, h, c, a)  { const k = col(c, a); g.fillStyle(k.color, k.alpha); g.fillRect(x, y, w, h); }
 function fillCirc(g, x, y, r, c, a)     { const k = col(c, a); g.fillStyle(k.color, k.alpha); g.fillCircle(x, y, r); }
-function fillElli(g, x, y, rx, ry, c, a){ const k = col(c, a); g.fillStyle(k.color, k.alpha); g.fillEllipse(x, y, rx, ry); }
+function fillElli(g, x, y, rx, ry, c, a){ const k = col(c, a); g.fillStyle(k.color, k.alpha); g.fillEllipse(x, y, rx * 2, ry * 2); }
 function strokeRect(g, x, y, w, h, c, lw, a) { const k = col(c, a); g.lineStyle(lw || 2, k.color, k.alpha); g.strokeRect(x, y, w, h); }
+function strokeCirc(g, x, y, r, c, lw, a)    { const k = col(c, a); g.lineStyle(lw || 2, k.color, k.alpha); g.strokeCircle(x, y, r); }
+function strokeElli(g, x, y, rx, ry, c, lw, a) { const k = col(c, a); g.lineStyle(lw || 2, k.color, k.alpha); g.strokeEllipse(x, y, rx * 2, ry * 2); }
 function linea(g, x0, y0, x1, y1, c, lw, a) { const k = col(c, a); g.lineStyle(lw || 2, k.color, k.alpha); g.lineBetween(x0, y0, x1, y1); }
+
+// mitja circumferència (part de dalt) — turons, estalagmites, arcs de porta...
+function fillSemi(g, x, y, r, c, a) {
+  const k = col(c, a);
+  g.fillStyle(k.color, k.alpha);
+  g.beginPath(); g.arc(x, y, r, Math.PI, 0, false); g.fillPath();
+}
+function strokeSemi(g, x, y, r, c, lw, a) {
+  const k = col(c, a);
+  g.lineStyle(lw || 2, k.color, k.alpha);
+  g.beginPath(); g.arc(x, y, r, Math.PI, 0, false); g.strokePath();
+}
+// triangle ple
+function triangle(g, x0, y0, x1, y1, x2, y2, c, a) {
+  const k = col(c, a);
+  g.fillStyle(k.color, k.alpha);
+  g.fillTriangle(x0, y0, x1, y1, x2, y2);
+}
+// corba suau de punt a punt (per a cues, cables, lianes...)
+function corba(g, x0, y0, cx, cy, x1, y1, c, lw, a) {
+  const k = col(c, a);
+  g.lineStyle(lw || 3, k.color, k.alpha);
+  g.beginPath();
+  pathQuad(g, x0, y0, cx, cy, x1, y1);
+  g.strokePath();
+}
 
 // corba quadràtica (com ctx.quadraticCurveTo) feta de trossets de línia
 function quadTo(g, x0, y0, cx, cy, x1, y1) {
