@@ -111,6 +111,7 @@ function gradientDelNivell() {
 
 function drawBackground() {
   const g = gBG;
+  g.clear();   // IMPORTANT: si no s'esborra, el fons s'ACUMULA cada frame i el joc s'alenteix!
   bgGrad.setTexture(gradientDelNivell());   // el cel del nivell!
   const inDesert = levelNum === 1 && (player.x < 2750 || player.x > 6200);
   const inCastle = levelNum === 2 || (levelNum === 1 && player.x >= 2750 && player.x <= 6200);
