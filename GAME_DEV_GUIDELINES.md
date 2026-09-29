@@ -42,30 +42,81 @@ Prefer simple, understandable technologies over unnecessary dependencies.
 
 Do not introduce React, TypeScript, Webpack, Vite, Electron, Unity, Godot or other frameworks unless the project genuinely reaches a point where they solve a concrete problem.
 
-For the initial project, a simple structure is preferred:
+For the initial project, a simple structure is preferred.
 
-game/
-├── index.html
-├── style.css
+poYoshi Island II/
+├── index.html              # el joc (Phaser)
+├── joc_antic.html          # la versió antiga de canvas (per comparar!)
+├── lib/
+│   └── phaser.min.js       # Phaser 3 local — funciona sense internet!
 ├── src/
-│   ├── main.js
-│   ├── scenes/
-│   ├── entities/
-│   ├── systems/
-│   └── config/
+│   ├── config.js           # constants, colors i ajudants de dibuix
+│   ├── art.js              # els dibuixos en píxels → textures de Phaser
+│   ├── poshi.js            # el Poshi dibuixat a mà (imatge incrustada)
+│   ├── so.js               # música chiptune: melodia+harmonia+baix+drums!
+│   ├── nivells.js          # les DADES dels 14 nivells + buildLevel()
+│   ├── mun.js              # el dibuix del món (cel, plataformes, bosses...)
+│   └── joc.js              # l'escena Phaser i tota la lògica del joc
 ├── assets/
-│   ├── player/
-│   ├── enemies/
-│   ├── tiles/
-│   ├── backgrounds/
-│   ├── effects/
-│   └── audio/
-├── levels/
-└── GAME_DESIGN.md
+│   ├── poshi_clean.png     # el dibuix del Poshi escanejat i netejat
+│   └── nivells/            # esbossos de nivells dibuixats a mà
+├── levels/                 # NIVELLS FETS PER L'UNAI!
+│   ├── manifest.js         # llista els fitxers que es carreguen
+│   ├── exemple.js          # nivell d'exemple per copiar
+│   └── LLEGEIX_ME.txt      # com fer un nivell nou
+├── tools/
+│   ├── neteja_sprite.py    # dibuix → sprite PNG net (sense fons)
+│   ├── esbos_nivell.py     # esbós escanejat → fitxer de nivell
+│   ├── editor_nivell.html  # editor de nivells al navegador 🖍️
+│   └── verifica_nivells.py # comprova que els nivells siguin iguals
+├── js/                     # el codi ANTIC (es conserva com a referència)
+└── GAME_DEV_GUIDELINES.md
 
 Adapt the structure when the project grows.
 
 Do not create elaborate architecture before it is needed.
+
+---
+
+Com es juga / com es desenvolupa
+
+- Per jugar: obre `index.html` amb un servidor local
+  (`python3 -m http.server` a la carpeta del joc, després
+  `http://localhost:8000`).
+- Truc ràpid: `index.html?nivell=3` entra directament al nivell 3
+  (molt útil per provar nivells nous!).
+- La pantalla de selecció: tecles 1-9, 0 (nivell 10), M (12), N (13), B (14).
+
+Fer un nivell nou (3 maneres)
+
+1. **A mà al codi**: copia `levels/exemple.js`, canvia les dades,
+   afegeix el fitxer a `levels/manifest.js`, juga amb `?nivell=15`.
+2. **Amb l'editor**: obre `tools/editor_nivell.html`, dibuixa
+   plataformes arrossegant, posa enemics i fruites clicant,
+   prem "Descarrega" → copia el fitxer a `levels/` i al manifest.
+3. **D'un dibuix**: `python3 tools/esbos_nivell.py dibuix.png 15`
+   converteix un esbós en plataformes (tinta fosca → parets de roca;
+   colors de retolador vius → tipus: verd=terra, groc=sorra, etc.).
+
+Fer un personatge nou
+
+- Dibuixa'l, escaneja'l o fotografia'l, i després:
+  `python3 tools/neteja_sprite.py assets/elmeudibuix.png`
+  → crea `elmeudibuix_clean.png` transparent i retallat.
+- Per fer-lo servir al joc: carrega'l a `preload()` i fes
+  `this.add.image(x, y, 'elmeudibuix')` — o bé defineix el seu
+  pixel-art a `src/art.js` per tenir-lo sempre disponible.
+
+La música chiptune
+
+- `src/so.js` té 4 canals estil Game Boy: melodia (square),
+  harmonia (square), baix (triangle) i percussió (soroll).
+- Cada nivell té la seva cançó a `SONGS`: `lead` i `bass` són
+  llistes de notes en Hz (0 = silenci), `harm` és la 2a veu
+  (un desplaçament d'escala o una llista de notes pròpia),
+  `step` els frames per nota i `drums` el ritme
+  ('k' bombo, 's' caixa, 'h' xarèmbol, 'x' bombo+xarèmbol, '.' res).
+- Per canviar la música d'un nivell: edita la seva entrada a `SONGS`.
 
 ---
 
