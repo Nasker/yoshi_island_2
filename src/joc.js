@@ -13,6 +13,7 @@ function resetPlayer() {
   player.flutter = 60;          // combustible per planar
   player.eggs = 0;
   player.hearts = 3;
+  player.maxHearts = 3;         // el nivell de la cursa en dona 8!
   player.inv = 0;               // invincibilitat
   player.tongue = 0;            // temporitzador de la llengua
   player.eggCooldown = 0;
@@ -42,16 +43,24 @@ function ouchPlayer(srcX) {
   p.vy = -7;
   burst(p.x + p.w/2, p.y + p.h/2, '#ff5252');
   beep(220, 0.3, 'square', 0.18, -150);
-  if (p.baby) {
+  if (p.baby && !COTXE) {
     p.baby = false;
     p.babyTimer = 10;
     babyBubble = {x: p.x + p.w/2, y: p.y - 30, vx: -p.facing * 1.5, vy: -3, t: 60};
   }
+  // amb cotxe el nadó va ben cordat amb el cinturó! 🚗👶
+  // però el cop costa un cor — els accidents fan mal!
+  if (COTXE) { p.hearts--; if (p.hearts <= 0) gameOver = true; }
 }
 
 function burst(x, y, color) {
   for (let i = 0; i < 10; i++)
     particles.push({x, y, vx: (Math.random()-0.5)*6, vy: -Math.random()*5, life: 25, color});
+}
+
+// la CUA de la cobra: el tros de darrere del cos, l'únic punt dèbil!
+function cuaCobra(e) {
+  return {x: e.vx > 0 ? e.x : e.x + e.w - 50, y: e.y + e.h * 0.4, w: 50, h: e.h * 0.6};
 }
 
 // ==================== UPDATE: tota la lògica del joc ====================
@@ -83,11 +92,54 @@ function update() {
   else if (keys['ArrowRight'] || keys['KeyD']) { p.vx = SPEED; p.facing = 1; }
   else p.vx *= 0.7;
 
+  // VROOOM!! 🏎️ en mode COTXE el cotxe accelera SOL i cada cop més ràpid!
+  if (COTXE) {
+    p.vx = 4.2 + Math.min(4.5, (frame - levelStart) * 0.0015);
+    p.facing = 1;
+  }
+
+  // ===== LUUUUPING!!! 🎢 la vagoneta agafa el cercle i dona la volta sencera!! =====
+  if (VAGO && !p.loop) {
+    for (const lp of loopins)
+      if (p.onGround && Math.abs(p.x + p.w/2 - lp.x) < 26) {
+        p.loop = {cx: lp.x, cy: lp.y - lp.r, r: lp.r, th: Math.PI/2};
+        shake = 6;
+        pop('LUPING!!! 🎢', lp.x - 70, lp.y - lp.r * 2 - 20, '#ffee58');
+        jingle([400, 550, 700, 900, 1100], 60);
+      }
+  }
+  if (p.loop) {
+    // enganxada al cercle: gira tanta volta com velocitat porti!
+    const L = p.loop;
+    L.th -= p.vx / L.r;
+    p.x = L.cx + Math.cos(L.th) * L.r - p.w/2;
+    p.y = L.cy + Math.sin(L.th) * L.r - p.h;
+    p.vy = 0; p.onGround = false;
+    if (frame % 12 === 0) beep(300 + (Math.PI/2 - L.th) * 60, 0.05, 'square', 0.05);  // fiu fiuuu!
+    if (L.th <= Math.PI/2 - Math.PI * 2) {   // volta sencera completada!!
+      p.loop = null;
+      p.y = L.cy + L.r - p.h;
+      p.onGround = true;
+      shake = 5;
+      burst(p.x + p.w/2, p.y + p.h, '#ffee58');
+      jingle([1100, 900, 1100, 1400], 70);
+    }
+    // durant el luping no hi ha gravetat ni enemics — NOMÉS LA VOLTA!
+    camX = Math.max(0, Math.min(p.x - W*0.4, LEVEL_END - W + 100));
+    camY = 0;
+    for (const pt of particles) { pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.2; pt.life--; }
+    for (let i = particles.length - 1; i >= 0; i--) if (particles[i].life <= 0) particles.splice(i, 1);
+    for (const pt of popups) { pt.y -= 0.8; pt.life--; }
+    for (let i = popups.length - 1; i >= 0; i--) if (popups[i].life <= 0) popups.splice(i, 1);
+    if (shake > 0) shake--;
+    return;
+  }
+
   // salt + PLANAR estil Yoshi
   if (jumpPressed && p.onGround) { p.vy = JUMP; p.flutter = levelNum === 6 ? 120 : 60; beep(300, 0.15, 'square', 0.12, 400); }
 
-  // SUPER COP DE CUL! (prem ↓ a l'aire)
-  if (keys['ArrowDown'] && !p.onGround && !p.pounding) {
+  // SUPER COP DE CUL! (prem ↓ a l'aire) — el cotxe NO en sap fer!
+  if (keys['ArrowDown'] && !p.onGround && !p.pounding && !COTXE) {
     p.pounding = true;
     p.vx = 0;
     beep(200, 0.15, 'square', 0.15, -100);
@@ -96,7 +148,7 @@ function update() {
   // a l'espai la gravetat és més baixa — SALTES MOLT MÉS ALT!
   // a les tuberies hi ha AIGUA — el Poshi NEDA: flota i cau suaument!
   let g = levelNum === 3 ? GRAV * 0.55 : levelNum === 4 ? GRAV * 0.75 : levelNum === 6 ? GRAV * 0.4 : GRAV;
-  if (!p.onGround && !p.pounding && jumpHeld && p.flutter > 0 && p.vy > -3) {
+  if (!p.onGround && !p.pounding && !COTXE && jumpHeld && p.flutter > 0 && p.vy > -3) {
     g = FLUTTER_GRAV;
     p.flutter--;
     if (p.vy > FLUTTER_MAX_FALL) p.vy = FLUTTER_MAX_FALL;
@@ -171,8 +223,20 @@ function update() {
     beep(70, 0.25, 'sawtooth', 0.22);
     burst(p.x + p.w/2, p.y + p.h, '#c98d45');
     for (const e of enemies)
-      if (e.alive && Math.abs(e.x - p.x) < 100 && Math.abs(e.y - p.y) < 80) {
-        if (e.boss) {
+      if (e.alive && !e.serp && Math.abs(e.x - p.x) < 100 && Math.abs(e.y - p.y) < 80) {
+        if (e.cobra) {
+          // el cop de cul també funciona — però NOMÉS a la cua!
+          const cua = cuaCobra(e);
+          if (rectsTouch(p, cua)) {
+            e.hp--; e.hurt = 25;
+            burst(cua.x + cua.w/2, cua.y + cua.h/2, '#ffd700');
+            if (e.hp <= 0) {
+              e.alive = false; score += 300; shake = 25;
+              pop('COBRA VENÇUDA!! +300', e.x + e.w/2, e.y - 40, '#ffd700');
+              jingle([880, 660, 880, 1100, 1320], 100);
+            }
+          }
+        } else if (e.boss) {
           e.hp--; e.hurt = 25;
           if (e.hp <= 0) {
             e.alive = false; score += 200;
@@ -200,21 +264,37 @@ function update() {
     }
   }
 
-  // caiguda al forat (o a la LAVA del castell / el RIU DE XOCOLATA!)
-  if (p.y > camY + H + 80 || ((levelNum === 2 || levelNum === 5 || levelNum === 6) && p.y > 505)) {
+  // caiguda al forat (o a la LAVA del castell / el RIU DE XOCOLATA / EL MAR!)
+  if (p.y > camY + H + 80 || ((levelNum === 2 || levelNum === 5 || levelNum === 6 || levelNum === 15 || levelNum === 16) && p.y > 505)) {
     p.hearts--;
     p.inv = 60;
     beep(300, 0.4, 'sawtooth', 0.18, -250);
     if (levelNum === 2 && p.y > 505) burst(p.x + p.w/2, 505, '#ff5722');   // splash de lava!
     if (levelNum === 5 && p.y > 505) burst(p.x + p.w/2, 505, '#6d4c41');   // xof! a la xocolata!
     if (levelNum === 6 && p.y > 505) burst(p.x + p.w/2, 505, '#29b6f6');   // splash d'aigua pudent!
-    p.x = Math.max(60, camX + 60); p.y = 100; p.vy = 0;
+    if (levelNum === 15 && p.y > 505) burst(p.x + p.w/2, 505, '#0288d1');  // splash al MAR! 🌊
+    if (levelNum === 16 && p.y > 505)  // al 16: lava al castell, mar al final!
+      burst(p.x + p.w/2, 505, p.x > 12000 ? '#0288d1' : '#ff5722');
+    // torna a aparèixer a la plataforma segura més propera (molt útil sobre el mar!)
+    let ref = null;
+    for (const pl of platforms)
+      if (!pl.hurt && p.x + p.w > pl.x && p.x < pl.x + pl.w && (!ref || pl.y > ref.y)) ref = pl;
+    if (!ref)
+      for (const pl of platforms)
+        if (!pl.hurt && pl.x + pl.w <= p.x && (!ref || pl.x > ref.x)) ref = pl;
+    if (ref) {
+      p.x = Math.min(Math.max(p.x, ref.x + 10), ref.x + ref.w - p.w - 10);
+      p.y = ref.y - p.h - 5;
+    } else {
+      p.x = Math.max(60, camX + 60); p.y = 100;
+    }
+    p.vy = 0;
     p.pounding = false;
     if (p.hearts <= 0) gameOver = true;
   }
 
   // llengua (Z)
-  if (keys['KeyZ'] && p.tongue === 0) { p.tongue = 16; beep(600, 0.08, 'square', 0.1, -400); }
+  if (keys['KeyZ'] && p.tongue === 0 && !COTXE) { p.tongue = 16; beep(600, 0.08, 'square', 0.1, -400); }
   if (p.tongue > 0) {
     p.tongue--;
     const t = 1 - Math.abs(p.tongue - 8) / 8;
@@ -222,7 +302,7 @@ function update() {
     const tx = p.facing === 1 ? p.x + p.w - 6 : p.x + 6;
     const tongueRect = {x: Math.min(tx, tx + p.facing*len), y: p.y + 12, w: Math.abs(len), h: 14};
     for (const e of enemies) {
-      if (e.alive && !e.boss && !e.spiky && rectsTouch(tongueRect, e)) {   // ni el boss ni els pinxos!
+      if (e.alive && !e.boss && !e.spiky && !e.serp && rectsTouch(tongueRect, e)) {   // ni el boss, ni els pinxos, ni la serp de Kamek!
         e.alive = false;
         p.eggs = Math.min(p.eggs + 1, 6);
         score += 20;
@@ -236,7 +316,7 @@ function update() {
 
   // apuntar i llançar ou (mantén X per apuntar, deixa'l anar per tirar!)
   if (p.eggCooldown > 0) p.eggCooldown--;
-  if (keys['KeyX'] && p.eggs > 0) {
+  if (keys['KeyX'] && p.eggs > 0 && !COTXE) {
     p.aiming = true;
     p.aimT += 0.07;
   } else if (p.aiming) {
@@ -269,7 +349,31 @@ function update() {
     for (const e of enemies)
       if (e.alive && rectsTouch({x: egg.x-6, y: egg.y-6, w: 12, h: 12}, e)) {
         egg.dead = true;
-        if (e.boss) {
+        if (e.cobra) {
+          // la COBRA només és vulnerable a la CUA!! 🐍
+          const cua = cuaCobra(e);
+          if (rectsTouch({x: egg.x-6, y: egg.y-6, w: 12, h: 12}, cua)) {
+            e.hp--; e.hurt = 25;
+            shake = 10;
+            beep(150, 0.2, 'sawtooth', 0.2, -80);
+            burst(cua.x + cua.w/2, cua.y + cua.h/2, '#ffd700');
+            if (e.hp <= 0) {
+              e.alive = false; score += 300;
+              shake = 25;
+              pop('COBRA VENÇUDA!! +300', e.x + e.w/2, e.y - 40, '#ffd700');
+              jingle([880, 660, 880, 1100, 1320], 100);
+              burst(e.x + e.w/2, e.y, '#ff7043');
+              burst(e.x + e.w/2, e.y + 40, '#ffd700');
+            }
+          } else {
+            // CLONK! l'ou rebota — el cos és dur com una roca!
+            beep(900, 0.08, 'square', 0.1, -300);
+            pop('Apunta a la CUA! 🐍', egg.x - 40, egg.y - 30, '#ffee58');
+          }
+        } else if (e.serp) {
+          // la serp de Kamek és MÀGICA: els ous hi reboten! 🐍✨
+          beep(900, 0.08, 'square', 0.1, -300);
+        } else if (e.boss) {
           e.hp--; e.hurt = 25;
           shake = 10;
           beep(150, 0.2, 'sawtooth', 0.2, -80);
@@ -329,6 +433,15 @@ function update() {
         e.y = e.baseY + Math.sin(e.t) * 60 + Math.max(-60, Math.min(80, (p.y - e.baseY) * 0.35));
         e.y = Math.max(120, Math.min(420, e.y));
       }
+    } else if (e.kamekBoss) {
+      // EN KAMEK GEGANT: et persegueix per tot el mar, com el Bowser Jr!! 🧙
+      e.t += 0.05;
+      const dx = (p.x + p.w/2) - (e.x + e.w/2);
+      const sp = 1.8 + (8 - e.hp) * 0.4;      // més ràpid quan li queda poca vida!
+      if (Math.abs(dx) > 30) { e.x += Math.sign(dx) * sp; e.vx = Math.sign(dx) * 2.2; }
+      e.x = Math.max(e.minX, Math.min(e.maxX, e.x));
+      e.y = e.baseY + Math.sin(e.t) * 50 + Math.max(-50, Math.min(70, (p.y - e.baseY) * 0.3));
+      e.y = Math.max(140, Math.min(410, e.y));
     } else {
       if (e.fly) {
         e.t += 0.05;
@@ -337,7 +450,7 @@ function update() {
       e.x += e.vx;
       if (e.x < e.minX || e.x > e.maxX) { e.vx *= -1; e.x += e.vx; }
     }
-    if (p.invStar > 0 && rectsTouch(p, e)) {
+    if (p.invStar > 0 && !e.serp && rectsTouch(p, e)) {
       // INVENCIBLE! Els enemics exploten al tocar-te!
       if (e.boss) {
         if (e.hurt === 0) { e.hp--; e.hurt = 30; }
@@ -347,9 +460,14 @@ function update() {
       pop('+30', e.x, e.y, '#ffd700');
       burst(e.x + e.w/2, e.y, '#ffd700');
       beep(600, 0.1, 'square', 0.12, 300);
-    } else if (!e.spiky && p.vy > 0 && p.y + p.h - e.y < 24 && rectsTouch(p, e)) {
+    } else if (!e.spiky && !e.serp && p.vy > 0 && p.y + p.h - e.y < 24 && rectsTouch(p, e)) {
       // AIXAFAT!! salta-li a sobre i PAM! 👟 (els pinxos NO: punxen!)
-      if (e.boss) {
+      if (e.cobra) {
+        // la cobra és massa dura: hi rebotes i ja està — NOMÉS la cua amb ous!
+        p.vy = -11;
+        beep(700, 0.08, 'square', 0.1, -200);
+        if (frame % 90 === 0) pop('Amb OUS a la CUA! 🥚🐍', e.x + e.w/2 - 60, e.y - 30, '#ffee58');
+      } else if (e.boss) {
         if (e.hurt === 0) { e.hp--; e.hurt = 30; }
         p.vy = -11;
         burst(e.x + e.w/2, e.y, '#ffffff');
@@ -367,7 +485,7 @@ function update() {
         burst(e.x + e.w/2, e.y + 10, '#ffffff');
         beep(350, 0.08, 'square', 0.12, 250);
       }
-    } else if (p.inv === 0 && rectsTouch(p, e)) {
+    } else if (p.inv === 0 && !e.serp && rectsTouch(p, e)) {
       ouchPlayer(e.x);
     }
   }
@@ -378,13 +496,16 @@ function update() {
     if (!e.boss || !e.alive || e.asleep) continue;
     e.shootT = (e.shootT || 0) + 1;
     // el drac enfadat dispara MOLT més ràpid — i són LLAMPECS! ⚡
-    if (e.shootT > (e.dragon ? Math.max(45, 95 - (6 - e.hp) * 8) : 110)) {
+    // en Kamek gegant escup MÀGIA de pressa, i encara més quan li fas mal! 🪄
+    if (e.shootT > (e.dragon ? Math.max(45, 95 - (6 - e.hp) * 8)
+                   : e.kamekBoss ? Math.max(55, 105 - (8 - e.hp) * 7) : 110)) {
       e.shootT = 0;
       const dx = (p.x + p.w/2) - (e.x + e.w/2);
       const dy = (p.y + p.h/2) - (e.y + e.h/2);
       const d = Math.sqrt(dx*dx + dy*dy) || 1;
-      const sp = e.dragon ? 6 : 4.5;
-      shots.push({x: e.x + e.w/2, y: e.y + e.h/2, vx: dx/d * sp, vy: dy/d * sp, elec: !!e.dragon});
+      const sp = e.dragon ? 6 : e.kamekBoss ? 5 : 4.5;
+      shots.push({x: e.x + e.w/2, y: e.y + e.h/2, vx: dx/d * sp, vy: dy/d * sp,
+                  elec: !!e.dragon, magic: !!e.kamekBoss});
       beep(e.dragon ? 900 : 180, 0.15, 'sawtooth', 0.15, e.dragon ? -500 : -60);
     }
   }
@@ -423,6 +544,74 @@ function update() {
           pop('EL DRAC S\'HA DESPERTAT!!! 🐉⚡', p.x - 60, p.y - 60, '#ffee58');
           jingle([150, 200, 300, 600], 120);
         }
+      }
+    }
+  }
+
+  // les MÀQUINES D'OUS: toca-les i t'omplen la cistella d'ous!! 🥚
+  for (const m of maquines) {
+    if (m.t > 0) m.t--;
+    if (m.t <= 0 && p.eggs < 6 && rectsTouch(p, {x: m.x - 26, y: m.y - 50, w: 52, h: 50})) {
+      m.t = 80;
+      p.eggs = 6;
+      pop('OUS A TOP!! 🥚', m.x - 30, m.y - 70, '#fff59d');
+      burst(m.x, m.y - 40, '#ffd700');
+      jingle([500, 700, 900, 1100], 60);
+    }
+  }
+
+  // ===== KAMEK!! 🧙 el mag vola cap a la serp i la transforma!! =====
+  if (KAMEK_X >= 0 && !kamek && p.x > KAMEK_X) {
+    kamek = {t: 0, x: p.x + 1050, y: 140};
+    pop('KAMEK!!! 🧙‍♂️', p.x + 150, p.y - 80, '#ce93d8');
+    jingle([880, 660, 880, 440], 100);
+  }
+  if (kamek) {
+    kamek.t++;
+    if (KAMEK_GRAN) {
+      // EN KAMEK LLUITA ELL MATEIX!! se't posa DAVANT com el Bowser Jr! 🧙
+      const destX = p.x + 430;
+      kamek.x += (destX - kamek.x) * 0.05;
+      kamek.y = 200 + Math.sin(kamek.t * 0.08) * 22;
+      if (kamek.t > 90 && Math.abs(kamek.x - destX) < 80) {
+        // PUUM!! ES FAAA GEEEANT!!!
+        shake = 30;
+        burst(kamek.x, kamek.y, '#ce93d8');
+        burst(kamek.x, kamek.y, '#ffd700');
+        burst(kamek.x, kamek.y, '#ff5252');
+        enemies.push({x: kamek.x - 55, y: 280, baseY: 330, w: 110, h: 130,
+                      vx: 2.2, minX: 12400, maxX: LEVEL_END - 150, hp: 8,
+                      boss: true, kamekBoss: true,
+                      alive: true, hurt: 0, t: 0});
+        pop('KAMEK GEEEANT!!! 🧙✨', kamek.x - 120, kamek.y - 90, '#ce93d8');
+        jingle([200, 400, 300, 600, 500, 900], 110);
+        kamek = null;   // ja no vola: ara és el BOSS!
+      }
+    } else {
+      const serp = enemies.find(e => e.serp && e.alive);
+      if (serp && kamek.t < 900) {
+        // Kamek s'acosta a la serp volant i fent cercles màgics
+        kamek.x += (serp.x - kamek.x) * 0.07;
+        kamek.y = 130 + Math.sin(kamek.t * 0.09) * 25;
+        if (kamek.t > 60 && Math.abs(kamek.x - serp.x) < 120) {
+          // ZAS!!! la serp es converteix en COBRA GEGANT!!
+          serp.alive = false;
+          shake = 25;
+          burst(serp.x + 20, serp.y, '#ce93d8');
+          burst(serp.x + 20, serp.y, '#ffd700');
+          burst(serp.x + 20, serp.y, '#7e57c2');
+          enemies.push({x: serp.x - 120, y: 430 - 70, baseY: 430, w: 260, h: 90,
+                        vx: 2.4, minX: 11300, maxX: 13450, hp: 8,
+                        boss: true, cobra: true, fly: true,
+                        alive: true, hurt: 0, t: 0});
+          pop('LA SERP ÉS UNA COBRA GEGANT!!! 🐍', serp.x - 160, serp.y - 100, '#ffee58');
+          jingle([150, 300, 600, 900, 1200], 110);
+          kamek.marxa = true;   // Kamek marxa rient de la broma!
+        }
+      }
+      if (kamek.marxa) {
+        kamek.x += 4; kamek.y -= 1.5;   // se'n va volant!
+        if (kamek.x > camX + W + 200) kamek = null;
       }
     }
   }
@@ -511,7 +700,7 @@ function update() {
     const hr = {x: h.x - 12, y: h.y - 12, w: 24, h: 24};
     if (rectsTouch(p, hr)) {
       h.taken = true;
-      p.hearts = Math.min(3, p.hearts + 1);
+      p.hearts = Math.min(p.maxHearts, p.hearts + 1);
       pop('+1 VIDA!', h.x, h.y - 10, '#ff6f91');
       burst(h.x, h.y, '#ff6f91');
       jingle([700, 1050], 80);
@@ -647,6 +836,8 @@ function syncMon() {
     strokeRect(gTop, pl.x - 21, pl.gy - 24, 42, 8, '#146332', 2);
   }
   for (const pad of pads) posa(pad, 'bounce', pad.x, pad.y);
+  for (const m of maquines) drawMaquina(m);   // les màquines d'ous! 🥚
+  drawKamek();                               // el mag, si ha aparegut! 🧙
   for (const s of starPicks) {
     if (s.taken) { amaga(s); continue; }
     posa(s, 'star', s.x - 4.5*S, s.y - 3.5*S + Math.sin(frame * 0.08 + s.x) * 4);
@@ -659,7 +850,8 @@ function syncMon() {
     if (!e.alive) { amaga(e); continue; }
     if (e.boss) { drawBossCos(e); continue; }
     const colNom = e.color in ROBE ? e.color : 'red';
-    if (e.poop)      posa(e, 'poop', e.x + e.w/2 - 15, e.y + e.h - 24, {flipX: e.vx < 0});
+    if (e.serp)      drawSerp(e);
+    else if (e.poop) posa(e, 'poop', e.x + e.w/2 - 15, e.y + e.h - 24, {flipX: e.vx < 0});
     else if (e.fish) posa(e, 'fish', e.x + e.w/2 - 24, e.y + e.h - 24, {flipX: e.vx < 0});
     else if (e.spiky) posa(e, 'spiky', e.x + e.w/2 - 18, e.y + e.h - 30, {flipX: e.vx < 0});
     else if (e.fly)
@@ -672,11 +864,20 @@ function syncMon() {
   for (const egg of eggs) posa(egg, 'egg', egg.x - 3.5*S, egg.y - 3.5*S);
   for (const s of shots) {
     if (s.elec) { drawBolt(s); amaga(s); }
+    else if (s.magic) {   // les boles de MÀGIA d'en Kamek — liles i brillants! 🪄
+      amaga(s);
+      fillCirc(gWorld, s.x, s.y, 9, '#ce93d8');
+      fillCirc(gWorld, s.x, s.y, 5, '#f3e5f5');
+      fillCirc(gWorld, s.x + Math.sin(frame * 0.3) * 10, s.y + Math.cos(frame * 0.3) * 10, 2.5, '#e1bee7');
+    }
     else posa(s, levelNum === 6 ? 'shot_choco' : 'shot', s.x - 3*S, s.y - 3*S);
   }
 
   // ===== EL POSHI EN ALTA RESOLUCIÓ!! 🐤 =====
   // el dibuix gran i detallat de l'Unai, directament del PNG escanejat!
+  if (VAGO) drawVago(player);   // al 18 el Poshi va amb la VAGONETA! 🎢
+  else if (COTXE) drawCotxe(player);   // al 17 el Poshi porta el seu COTXE de curses! 🏎️
+  else {
   const ph = 76;   // alçada en unitats de món — ben gran!
   const texP = ESCENA.textures.get(POSHI_TEX);
   const pw = ph * texP.getSourceImage().width / texP.getSourceImage().height;
@@ -686,6 +887,7 @@ function syncMon() {
         alpha: (player.inv > 0 && frame % 6 < 3) ? 0.35 : 1});
   poshiObj._img.setDisplaySize(pw, ph);
   poshiObj._img.setDepth(8);
+  }
 
   drawDinoExtras(player);
   if (babyBubble) drawBubble(babyBubble);
@@ -759,8 +961,8 @@ function drawHUD() {
   hudImg('egg', 'egg', 130, 10);
   hudText('ous', 'x' + player.eggs, 160, 22, {size: 20});
   hudTextos['ous'].setOrigin(0, 0.5);
-  for (let i = 0; i < 3; i++)
-    hudImg('cor' + i, 'heart', 230 + i * 32, 12, {alpha: i < player.hearts ? 1 : 0.25});
+  for (let i = 0; i < player.maxHearts; i++)
+    hudImg('cor' + i, 'heart', 230 + i * 30, 12, {alpha: i < player.hearts ? 1 : 0.25});
 
   // compte enrere del nadó Mario
   if (babyBubble) {
@@ -831,12 +1033,16 @@ function drawSelect() {
     ['#ff8a80', 'M   🏙️ TÒQUIO DE LEGO'],
     ['#ffee58', 'N   🎉 LA FESTA DE COLORS!!'],
     ['#b9f6ca', 'B   🌙 EL CAMP DE NIT (VERTICAL!)'],
+    ['#b3e5fc', 'P   🏰 EL CASTELL VOLADOR + COBRA!'],
+    ['#ff8a65', 'V   🌋 EL CASTELL DE VOLCANS + KAMEK!'],
+    ['#ef5350', 'C   🏎️ LA GRAN CURSA DE COTXES!'],
+    ['#bcaaa4', 'L   🎢 LA VAGONETA AMB LUPINGS!'],
   ];
-  // dues columnes: 7 a l'esquerra, 6 a la dreta — hi cap tot!!
+  // dues columnes: 8 a l'esquerra, la resta a la dreta — hi cap tot!!
   for (let i = 0; i < nivells.length; i++) {
-    const esq = i < 7;
-    hudText('sel_n' + i, nivells[i][1], esq ? W/4 : W*3/4, H/2 - 100 + (esq ? i : i - 7) * 52,
-            {size: 20, color: nivells[i][0], font: '"Comic Sans MS", sans-serif'});
+    const esq = i < 8;
+    hudText('sel_n' + i, nivells[i][1], esq ? W/4 : W*3/4, H/2 - 115 + (esq ? i : i - 8) * 42,
+            {size: 19, color: nivells[i][0], font: '"Comic Sans MS", sans-serif'});
   }
   hudText('sel_pista', "Pista: mentre jugues, prem la tecla d'un nivell per saltar-hi!",
           W/2, H - 18, {size: 16, color: '#aaaaaa', font: '"Comic Sans MS", sans-serif'});
@@ -877,7 +1083,7 @@ class EscenaJoc extends Phaser.Scene {
       // tria el nivell amb les tecles — quan vulguis!
       const lvl = {'Digit1':1,'Digit2':2,'Digit3':3,'Digit4':4,'Digit5':5,
                    'Digit6':6,'Digit7':7,'Digit8':8,'Digit9':9,'Digit0':10,
-                   'KeyM':12,'KeyN':13,'KeyB':14}[e.code];
+                   'KeyM':12,'KeyN':13,'KeyB':14,'KeyP':15,'KeyV':16,'KeyC':17,'KeyL':18}[e.code];
       if (lvl && LEVELS[lvl]) {
         selecting = false;
         for (const k of Object.keys(hudTextos))

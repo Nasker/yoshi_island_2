@@ -106,6 +106,14 @@ function gradientDelNivell() {
     return 'grad_party' + Math.min(7, (player.x / 1750) | 0);
   }
   if (levelNum === 14) return 'grad_night';
+  if (levelNum === 15)
+    // el castell volador: cel blau i net... fins que arriba el MAR de tempesta! 🌊
+    return player.x > 11500 ? 'grad_sea' : 'grad_fly';
+  if (levelNum === 16)
+    // el castell de volcans: cel de FOC... fins que surts al mar! 🌋
+    return player.x > 12000 ? 'grad_sea' : 'grad_volc';
+  if (levelNum === 17) return 'grad_road';   // dia de cursa! 🏎️
+  if (levelNum === 18) return 'grad_mine';   // dins la mina! 🎢
   return 'grad_default';
 }
 
@@ -127,6 +135,153 @@ function drawBackground() {
   const inTokyo = levelNum === 12;
   const inParty = levelNum === 13;
   const inNight = levelNum === 14;
+  const inFly = levelNum === 15;
+  const inVolc = levelNum === 16 && player.x <= 12000;
+  const inSea16 = levelNum === 16 && player.x > 12000;
+  const inRace = levelNum === 17;
+  const inVago = levelNum === 18;
+
+  if (inVago) {
+    // DINS LA MINA: parets fosques, roques i pols d'or que vola! ⛏️✨
+    // siluetes de roca a la llunyania (paral·laxi lent)
+    for (let i = 0; i < 6; i++) {
+      const rx = ((i * 700 - camX * 0.15) % (W + 400) + W + 400) % (W + 400) - 200;
+      fillElli(g, rx, 540, 150, 140 + (i % 3) * 60, 'rgba(30,20,10,0.6)');
+    }
+    // estalactites del sostre que passen de pressa!
+    for (let i = 0; i < 10; i++) {
+      const sx = ((i * 380 - camX * 0.5) % (W + 200) + W + 200) % (W + 200) - 100;
+      const len = 40 + (i * 53) % 90;
+      triangle(g, sx - 16, 0, sx + 16, 0, sx, len, 'rgba(35,20,10,0.85)');
+    }
+    // POLS D'OR que flota a l'aire de la mina!! ✨
+    for (let i = 0; i < 20; i++) {
+      const px = ((i * 263 - camX * 0.35) % (W + 40) + W + 40) % (W + 40) - 20;
+      const py = ((i * 149 + frame * 0.4) % (H + 40) + H + 40) % (H + 40) - 20;
+      fillCirc(g, px, py, 2.5, '#ffd700', 0.3 + 0.5 * Math.abs(Math.sin(frame * 0.08 + i)));
+    }
+    return;
+  }
+
+  if (inRace) {
+    // DIA DE CURSA!! ☀️ sol, núvols i la ciutat que et veu passar!
+    const sunX = 700 - camX * 0.03;
+    fillCirc(g, sunX, 90, 50, '#ffd54f');
+    fillCirc(g, sunX, 90, 38, '#fff176');
+    // edificis de la ciutat a la llunyania (paral·laxi!)
+    for (let i = 0; i < 8; i++) {
+      const bx = ((i * 480 - camX * 0.15) % (W + 400) + W + 400) % (W + 400) - 200;
+      const bh = 90 + (i * 67) % 120;
+      fillRect(g, bx, 540 - bh, 70, bh, 'rgba(120,144,156,0.45)');
+      for (let wy = 540 - bh + 12; wy < 530; wy += 24)
+        for (let wx = bx + 8; wx < bx + 60; wx += 18)
+          fillRect(g, wx, wy, 9, 12, 'rgba(255,241,118,0.5)');
+    }
+    // arbres i llambordes que PASSEN DE PRESSA — sensació de velocitat!!
+    for (let i = 0; i < 12; i++) {
+      const tx = ((i * 260 - camX * 0.7) % (W + 120) + W + 120) % (W + 120) - 60;
+      fillRect(g, tx, 500, 8, 40, '#6d4c41');
+      fillCirc(g, tx + 4, 490, 22, '#66bb6a');
+    }
+    // ratlles de VELOCITAT — el cotxe va a tota l'hòstia!! 💨
+    for (let i = 0; i < 8; i++) {
+      const vx = ((i * 331 - frame * (4 + i % 3)) % (W + 60) + W + 60) % (W + 60) - 30;
+      const vy = 100 + (i * 61) % 380;
+      linea(g, vx, vy, vx + 40, vy, 'rgba(255,255,255,0.4)', 2);
+    }
+    return;
+  }
+
+  if (inSea16) {
+    // EL MAR DE LA FI — igual que al 15: tempesta, núvols i gavines! 🌊
+    for (let i = 0; i < 5; i++) {
+      const cx = ((i * 640 - camX * 0.2) % (W + 300) + W + 300) % (W + 300) - 150;
+      fillElli(g, cx, 60 + (i % 2) * 30, 120, 26, 'rgba(69,90,100,0.75)');
+    }
+    if (frame % 120 < 8) {
+      const lx = 200 + (frame * 13) % 500;
+      g.lineStyle(4, col('#fff59d').color, 0.9);
+      g.beginPath();
+      g.moveTo(lx, 60); g.lineTo(lx - 14, 110); g.lineTo(lx + 6, 105); g.lineTo(lx - 10, 160);
+      g.strokePath();
+    }
+    for (let i = 0; i < 8; i++) {
+      const cx = ((i * 530 - camX * 0.4) % (W + 300) + W + 300) % (W + 300) - 150;
+      const cy = 140 + (i * 67) % 300;
+      fillElli(g, cx, cy, 80, 22, 'rgba(200,220,230,0.5)');
+    }
+    return;
+  }
+
+  if (inVolc) {
+    // EL CEL DELS VOLCANS: fum, boira taronja i brases que volen! 🌋
+    // volcans en dues capes a la llunyania (paral·laxi!)
+    for (let i = 0; i < 5; i++) {
+      const vx = ((i * 900 - camX * 0.12) % (W + 700) + W + 700) % (W + 700) - 350;
+      triangle(g, vx - 160, 540, vx + 160, 540, vx, 240 + (i % 2) * 40, 'rgba(74,20,20,0.6)');
+      // cràter que brilla!
+      triangle(g, vx - 28, 268 + (i % 2) * 40, vx + 28, 268 + (i % 2) * 40, vx, 236 + (i % 2) * 40, 'rgba(255,87,34,0.75)');
+    }
+    for (let i = 0; i < 4; i++) {
+      const vx = ((i * 1100 - camX * 0.3) % (W + 800) + W + 800) % (W + 800) - 400;
+      triangle(g, vx - 200, 540, vx + 200, 540, vx, 310 + (i % 2) * 30, 'rgba(45,15,15,0.8)');
+      fillElli(g, vx, 316 + (i % 2) * 30, 30, 10, 'rgba(255,110,40,0.85)');
+    }
+    // fum que puja dels cràters
+    for (let i = 0; i < 12; i++) {
+      const fx = ((i * 353 - camX * 0.2) % (W + 100) + W + 100) % (W + 100) - 50;
+      const fy = 230 - ((frame * 0.7 + i * 60) % 260);
+      fillCirc(g, fx, fy, 16 + (i % 3) * 8, 'rgba(60,45,45,0.5)');
+    }
+    // BRASES que volen per l'aire!! 🔥
+    for (let i = 0; i < 25; i++) {
+      const ex = ((i * 211 + frame * (0.5 + (i % 3) * 0.4) - camX * 0.3) % (W + 40) + W + 40) % (W + 40) - 20;
+      const ey = ((i * 149 - frame * (1.2 + (i % 4) * 0.5)) % (H + 40) + H + 40) % (H + 40) - 20;
+      const a = 0.4 + 0.6 * Math.abs(Math.sin(frame * 0.1 + i));
+      fillRect(g, ex, ey, i % 5 === 0 ? 5 : 3, i % 5 === 0 ? 5 : 3,
+               i % 4 === 0 ? '#ff5722' : '#ffca28', a);
+    }
+    return;
+  }
+
+  if (inFly) {
+    // EL CEL DEL CASTELL VOLADOR — núvols per tot arreu i vent! ☁️💨
+    // capa de núvols petits a la llunyania (paral·laxi lent)
+    for (let i = 0; i < 8; i++) {
+      const cx = ((i * 530 - camX * 0.15) % (W + 300) + W + 300) % (W + 300) - 150;
+      const cy = 40 + (i * 67) % 300;
+      fillElli(g, cx, cy, 60, 18, 'rgba(255,255,255,0.55)');
+      fillElli(g, cx + 20, cy - 10, 34, 16, 'rgba(255,255,255,0.55)');
+    }
+    // capa de núvols grossos més a prop (paral·laxi ràpid)
+    for (let i = 0; i < 6; i++) {
+      const cx = ((i * 720 - camX * 0.4) % (W + 400) + W + 400) % (W + 400) - 200;
+      const cy = 60 + (i * 113) % 380;
+      fillElli(g, cx, cy, 100, 28, 'rgba(255,255,255,0.8)');
+      fillElli(g, cx + 34, cy - 16, 56, 26, 'rgba(255,255,255,0.8)');
+    }
+    // sobre el MAR: núvols de tempesta grisos i llampecs!! ⛈️
+    if (player.x > 11500) {
+      for (let i = 0; i < 5; i++) {
+        const cx = ((i * 640 - camX * 0.2) % (W + 300) + W + 300) % (W + 300) - 150;
+        fillElli(g, cx, 60 + (i % 2) * 30, 120, 26, 'rgba(69,90,100,0.75)');
+      }
+      if (frame % 120 < 8) {   // un llampec de tant en tant! ⚡
+        const lx = 200 + (frame * 13) % 500;
+        g.lineStyle(4, col('#fff59d').color, 0.9);
+        g.beginPath();
+        g.moveTo(lx, 60); g.lineTo(lx - 14, 110); g.lineTo(lx + 6, 105); g.lineTo(lx - 10, 160);
+        g.strokePath();
+      }
+    }
+    // ratlles de VENT que corren — el castell vola de pressa!! 💨
+    for (let i = 0; i < 10; i++) {
+      const wx = ((i * 317 - frame * 6) % (W + 80) + W + 80) % (W + 80) - 40;
+      const wy = 50 + (i * 97) % 400;
+      linea(g, wx, wy, wx + 50 + (i % 3) * 20, wy, 'rgba(255,255,255,0.5)', 3);
+    }
+    return;
+  }
 
   if (inDesert) {
     // EL SOL DEL DESERT — gegant i torrat!! ☀️
@@ -495,6 +650,207 @@ function drawBackground() {
 // arbres, torxes, palmeres, cactus... cada nivell té el seu ambient!
 function drawDecor() {
   const g = gWorld;
+  if (levelNum === 15) {
+    // ===== EL CASTELL VOLADOR!! 🏰☁️ =====
+    // HÈLIXS gegants que sostenen el castell — girennn!! 
+    for (const hx of [1800, 2500, 3300, 5900, 6300, 6700]) {
+      if (offscreen(hx, 220)) continue;
+      const a = frame * 0.5;
+      fillRect(g, hx - 4, 540, 8, 40, '#78909c');          // pal de l'hèlix
+      linea(g, hx - Math.cos(a) * 55, 540 - Math.sin(a) * 10,
+            hx + Math.cos(a) * 55, 540 + Math.sin(a) * 10, '#b0bec5', 10);
+      linea(g, hx - Math.cos(a + 1.57) * 55, 540 - Math.sin(a + 1.57) * 10,
+            hx + Math.cos(a + 1.57) * 55, 540 + Math.sin(a + 1.57) * 10, '#90a4ae', 10);
+      fillCirc(g, hx, 540, 8, '#546e7a');
+    }
+    // GLOBUS que ajuden a sostenir la part dels motors! 🎈
+    for (const bx of [5750, 6100, 6500, 6800]) {
+      if (offscreen(bx, 220)) continue;
+      const by = 160 + Math.sin(frame * 0.05 + bx) * 8;
+      linea(g, bx, 480, bx, by + 40, 'rgba(120,80,60,0.7)', 3);   // la corda
+      fillElli(g, bx, by, 45, 55, ['#ff5d8f', '#4dd2ff', '#ffd166', '#9d6bff'][(bx / 50 | 0) % 4]);
+      fillElli(g, bx - 12, by - 15, 10, 15, 'rgba(255,255,255,0.5)');
+    }
+    // ESTENDARDS vermells al pont i al pati
+    for (const bx of [1500, 2650, 9500, 11150]) {
+      if (offscreen(bx, 220)) continue;
+      fillRect(g, bx, 300, 8, 180, '#5d4037');
+      g.fillStyle(col('#e53935').color, 1);
+      g.beginPath();
+      g.moveTo(bx + 8, 305); g.lineTo(bx + 70, 318 + Math.sin(frame * 0.1 + bx) * 6);
+      g.lineTo(bx + 8, 335); g.fillPath();
+    }
+    // al MAR: gavines que volen!! 🕊️
+    if (player.x > 10800) {
+      for (let i = 0; i < 6; i++) {
+        const gx = ((i * 470 + frame * 1.5) % (W + 100) + W + 100) % (W + 100) - 50 + camX;
+        const gy = 100 + (i * 53) % 140 + Math.sin(frame * 0.06 + i) * 14;
+        const flap = Math.sin(frame * 0.25 + i * 2) * 8;
+        corba(g, gx - 12, gy - flap, gx, gy + 4, gx, gy, '#eceff1', 3);
+        corba(g, gx, gy, gx, gy + 4, gx + 12, gy - flap, '#eceff1', 3);
+      }
+    }
+    return;
+  }
+  if (levelNum === 16) {
+    // ===== EL CASTELL DE VOLCANS D'EN KAMEK!! 🌋🧙 =====
+    if (player.x <= 12000) {
+      // GEISERS DE LAVA que esclaten de tant en tant!! ⛲🔥
+      for (const gx of [3350, 4350, 5600, 9750, 10750]) {
+        if (offscreen(gx, 220)) continue;
+        const fase = (frame + gx) % 240;   // esclata un tros de cada cicle!
+        if (fase < 90) {
+          const alt = Math.sin(fase / 90 * Math.PI) * (180 + (gx % 3) * 40);
+          fillRect(g, gx - 12, 505 - alt, 24, alt, '#ff7043');
+          fillRect(g, gx - 5, 505 - alt, 10, alt, '#ffca28');
+          fillCirc(g, gx, 505 - alt, 16 + Math.sin(frame * 0.3) * 4, '#ffca28');
+          for (let i = 0; i < 4; i++)
+            fillCirc(g, gx + Math.sin(fase * 0.2 + i * 2) * 30, 505 - alt - i * 16, 4, '#ff8a65');
+        } else {
+          fillCirc(g, gx, 502, 12, '#ff8a65', 0.5);   // bombolletja esperant!
+        }
+      }
+      // estendards MORATS d'en Kamek penjats per tot el castell!! 🧙
+      for (const bx of [1700, 2950, 6300, 7700, 11050, 12400]) {
+        if (offscreen(bx, 220)) continue;
+        fillRect(g, bx, 300, 8, 180, '#37474f');
+        g.fillStyle(col('#7e57c2').color, 1);
+        g.beginPath();
+        g.moveTo(bx + 8, 305); g.lineTo(bx + 66, 318 + Math.sin(frame * 0.1 + bx) * 6);
+        g.lineTo(bx + 8, 335); g.fillPath();
+        textStamp('est16_' + bx, '✦', bx + 34, 320, {size: 16, color: '#ffd700'});
+      }
+      // boques de volcà que fumejen a les parets
+      for (const vx of [900, 2600, 5000, 7400, 10200]) {
+        if (offscreen(vx, 220)) continue;
+        fillCirc(g, vx, 120, 10, 'rgba(40,25,25,0.8)');
+        const fy = 120 - ((frame * 0.8 + vx) % 90);
+        fillCirc(g, vx + Math.sin(frame * 0.1) * 6, fy, 8, 'rgba(70,55,55,0.5)');
+      }
+    } else {
+      // al MAR: gavines i el castell que queda enrere! 🕊️🏰
+      for (let i = 0; i < 6; i++) {
+        const gx = ((i * 470 + frame * 1.5) % (W + 100) + W + 100) % (W + 100) - 50 + camX;
+        const gy = 100 + (i * 53) % 140 + Math.sin(frame * 0.06 + i) * 14;
+        const flap = Math.sin(frame * 0.25 + i * 2) * 8;
+        corba(g, gx - 12, gy - flap, gx, gy + 4, gx, gy, '#eceff1', 3);
+        corba(g, gx, gy, gx, gy + 4, gx + 12, gy - flap, '#eceff1', 3);
+      }
+      // la boca del volcà per on has sortit — fum i foc a la llunyania!
+      const mx = 12550;
+      if (!offscreen(mx, 400)) {
+        triangle(g, mx - 250, 505, mx + 250, 505, mx, 150, 'rgba(50,20,20,0.9)');
+        fillElli(g, mx, 160, 40, 14, 'rgba(255,110,40,0.9)');
+        if (frame % 40 < 25)
+          fillCirc(g, mx + Math.sin(frame * 0.1) * 10, 130 - (frame % 40) * 2, 12, 'rgba(60,45,45,0.5)');
+      }
+    }
+    return;
+  }
+  if (levelNum === 17) {
+    // ===== LA GRAN CURSA!! 🏎️ =====
+    // EL TÚNEL: sostre fosc que tapa el cel + llums que passen!
+    if (player.x > 6600 && player.x < 9000) {
+      fillRect(g, Math.max(camX - 60, 6800), 0, Math.min(2000, camX + W + 60) - Math.max(camX - 60, 6800), 140, '#1a1a2e');
+      for (let lx = 6900; lx < 8800; lx += 220) {
+        if (offscreen(lx, 220)) continue;
+        fillRect(g, lx, 140, 12, 20, '#455a64');
+        fillCirc(g, lx + 6, 158, 10, '#fff59d');      // llum del túnel!
+        fillElli(g, lx + 6, 190, 40, 20, 'rgba(255,245,157,0.15)');
+      }
+      // parets de maons als costats
+      fillRect(g, 6800, 140, 16, 340, '#263238');
+      fillRect(g, 8784, 140, 16, 340, '#263238');
+    }
+    // PILARS del pont que baixen al mar!
+    for (const px of [4750, 5300, 5750, 6200, 6600]) {
+      if (offscreen(px, 220)) continue;
+      fillRect(g, px - 10, 490, 20, 60, '#546e7a');
+      strokeRect(g, px - 10, 490, 20, 60, '#37474f', 2);
+    }
+    // PALMERES de la costa! 🌴
+    for (const px of [8950, 9700, 10400, 10950]) {
+      if (offscreen(px, 220)) continue;
+      corba(g, px, 480, px + 10, 400, px + 20, 350, '#8d6e63', 10);
+      for (let a = -2; a <= 2; a++)
+        corba(g, px + 20, 350, px + 20 + a*28, 322, px + 20 + a*45, 348 + Math.abs(a)*10, '#2e7d32', 6);
+    }
+    // SENYALS de trànsit: corbes i perill! ⚠️
+    for (const sx of [2400, 4500, 6700, 11000]) {
+      if (offscreen(sx, 120)) continue;
+      fillRect(g, sx, 400, 6, 60, '#78909c');
+      g.fillStyle(col('#ffd54f').color, 1);
+      g.beginPath();
+      g.moveTo(sx - 14, 400); g.lineTo(sx + 26, 400); g.lineTo(sx + 6, 370); g.fillPath();
+      textStamp('senyal_' + sx, '!', sx + 6, 390, {size: 18, color: '#37474f'});
+    }
+    // LA META!! pancarta quadriculada damunt la carretera 🏁
+    const mx = 14200;
+    if (!offscreen(mx, 300)) {
+      for (const mx2 of [mx - 160, mx + 160]) {
+        fillRect(g, mx2 - 6, 300, 12, 180, '#455a64');
+      }
+      // quadres blanc i negre!
+      for (let i = 0; i < 8; i++) for (let j = 0; j < 2; j++)
+        fillRect(g, mx - 160 + i * 40, 300 + j * 20, 40, 20, (i + j) % 2 ? '#212121' : '#ffffff');
+      textStamp('meta_txt', 'META!!', mx, 350, {size: 26, color: '#e53935'});
+    }
+    return;
+  }
+  if (levelNum === 18) {
+    // ===== LA MINA DELS LUPINGS!! 🎢⛏️ =====
+    // els cercles dels LUPINGS dibuixats com a rails amb travesses!
+    for (const lp of loopins) {
+      if (offscreen(lp.x, lp.r + 150)) continue;
+      const cy = lp.y - lp.r;
+      // anell exterior de ferro
+      g.lineStyle(14, col('#546e7a').color, 1);
+      g.strokeCircle(lp.x, cy, lp.r);
+      g.lineStyle(4, col('#b0bec5').color, 1);
+      g.strokeCircle(lp.x, cy, lp.r - 7);
+      g.strokeCircle(lp.x, cy, lp.r + 7);
+      // travesses de fusta al voltant del cercle!
+      for (let i = 0; i < 24; i++) {
+        const a = i / 24 * Math.PI * 2;
+        const x1 = lp.x + Math.cos(a) * (lp.r - 12), y1 = cy + Math.sin(a) * (lp.r - 12);
+        const x2 = lp.x + Math.cos(a) * (lp.r + 12), y2 = cy + Math.sin(a) * (lp.r + 12);
+        linea(g, x1, y1, x2, y2, '#6d4c41', 5);
+      }
+      // suports de fusta que aguanten el luping!
+      linea(g, lp.x - lp.r, lp.y, lp.x - lp.r + 20, cy - lp.r, '#5d4037', 8);
+      linea(g, lp.x + lp.r, lp.y, lp.x + lp.r - 20, cy - lp.r, '#5d4037', 8);
+      // fletxa groga: PER AQUÍ ES FA EL LUPING!
+      if (frame % 40 < 20)
+        textStamp('fletxa_lp_' + lp.x, '➜', lp.x - lp.r - 50, lp.y - 40, {size: 26, color: '#ffd700'});
+    }
+    // CRISTALLS que brillen a les parets de la mina! 💎
+    for (const cx2 of [600, 1900, 4700, 5500, 7100, 8900, 10500, 12300, 13800]) {
+      if (offscreen(cx2, 120)) continue;
+      const cols = ['#4dd0e1', '#b388ff', '#ff8a80'];
+      const c = cols[(cx2 / 100 | 0) % 3];
+      for (let i = 0; i < 3; i++) {
+        const h = 20 + i * 14;
+        triangle(g, cx2 + i * 18 - 8, 480, cx2 + i * 18 + 8, 480, cx2 + i * 18, 480 - h, c);
+      }
+      if (frame % 60 < 30)   // brillantor!
+        fillCirc(g, cx2 + 18, 460, 3, '#ffffff', 0.8);
+    }
+    // llanternes penjades del sostre!
+    for (const lx of [1100, 3000, 5100, 7300, 9700, 11300, 12900, 14200]) {
+      if (offscreen(lx, 120)) continue;
+      linea(g, lx, 0, lx, 90, '#4e342e', 3);
+      fillRect(g, lx - 9, 90, 18, 24, '#6d4c41');
+      fillCirc(g, lx, 102, 6, '#ffca28');
+      fillElli(g, lx, 130, 50, 25, 'rgba(255,202,40,0.12)');   // halo de llum
+    }
+    // bigues de fusta que sostenen el sostre de la mina
+    for (const bx of [400, 2400, 4400, 6800, 9200, 11600, 13600]) {
+      if (offscreen(bx, 160)) continue;
+      fillRect(g, bx, 0, 24, 130, '#5d4037');
+      fillRect(g, bx - 20, 120, 64, 16, '#4e342e');
+    }
+    return;
+  }
   if (levelNum === 3) {
     // estrelles grans que decoren el cel espacial
     for (const sx of [200, 800, 1400, 2100, 2700, 3300, 3900, 4550, 5200, 5900, 6400])
@@ -703,6 +1059,51 @@ function drawLiquids() {
   if (levelNum === 2) cfg = ['#ff5722', '#ffca28', '#ff8a65', 1.5, 508, 0.12];   // LAVA!! 🔥
   if (levelNum === 5) cfg = ['#6d4c41', '#4e342e', '#8d6e63', 1.2, 510, 0.1];    // XOCOLATA 🍫
   if (levelNum === 6) cfg = ['#12736b', '#0d4f4a', '#1ba29a', 1.4, 510, 0.11];   // AIGUA PUDENT 💩
+  if (levelNum === 16 && player.x > 12000) {
+    // el mar de la lluita final contra en Kamek! 🌊
+    fillRect(g, camX - 50, 505, W + 100, 60, '#0277bd');
+    for (let i = 0; i < 16; i++) {
+      const bx = camX - 20 + (i * 137 + frame * 1.3) % (W + 40);
+      const by = 508 + Math.sin(frame * 0.1 + i * 2) * 6;
+      fillCirc(g, bx, by, 5 + (i % 3) * 3, '#01579b');
+    }
+    for (let i = 0; i < 12; i++) {
+      const bx = camX - 30 + (i * 173 + frame * 0.9) % (W + 60);
+      const by = 505 + Math.sin(frame * 0.12 + i * 1.9) * 5;
+      fillElli(g, bx, by, 14, 4, 'rgba(255,255,255,0.85)');
+    }
+    fillRect(g, camX - 50, 505, W + 100, 5, '#4fc3f7');
+    return;
+  }
+  if (levelNum === 16) cfg = ['#ff5722', '#ffca28', '#ff8a65', 1.6, 508, 0.13];  // LAVA VOLCÀNICA!! 🌋
+  if (levelNum === 17 && player.x > 4400 && player.x < 7000) {
+    // el mar de sota el pont de la cursa 🌊 (no et fots, eh!)
+    fillRect(g, camX - 50, 510, W + 100, 50, '#29b6f6');
+    for (let i = 0; i < 12; i++) {
+      const bx = camX - 30 + (i * 173 + frame * 0.9) % (W + 60);
+      const by = 510 + Math.sin(frame * 0.12 + i * 1.9) * 5;
+      fillElli(g, bx, by, 14, 4, 'rgba(255,255,255,0.85)');
+    }
+    fillRect(g, camX - 50, 510, W + 100, 4, '#81d4fa');
+    return;
+  }
+  if (levelNum === 15 && player.x > 10800) {
+    // EL MAR DE LA COBRA!! 🌊 onades que pugen i baixen!
+    fillRect(g, camX - 50, 505, W + 100, 60, '#0277bd');
+    for (let i = 0; i < 16; i++) {
+      const bx = camX - 20 + (i * 137 + frame * 1.3) % (W + 40);
+      const by = 508 + Math.sin(frame * 0.1 + i * 2) * 6;
+      fillCirc(g, bx, by, 5 + (i % 3) * 3, '#01579b');
+    }
+    // escuma blanca a la cresta de les onades!
+    for (let i = 0; i < 12; i++) {
+      const bx = camX - 30 + (i * 173 + frame * 0.9) % (W + 60);
+      const by = 505 + Math.sin(frame * 0.12 + i * 1.9) * 5;
+      fillElli(g, bx, by, 14, 4, 'rgba(255,255,255,0.85)');
+    }
+    fillRect(g, camX - 50, 505, W + 100, 5, '#4fc3f7');
+    return;
+  }
   if (!cfg) return;
   fillRect(g, camX - 50, 505, W + 100, 60, cfg[0]);
   for (let i = 0; i < 14; i++) {
@@ -857,6 +1258,34 @@ function drawPlatform(p) {
     // reblons
     for (let sx = p.x + 20; sx < p.x + p.w; sx += 60)
       fillRect(g, sx, p.y + p.h - 8, 4, 4, '#90a4ae');
+  } else if (p.type === 'road') {
+    // ASFALT!! carretera fosca amb ratlles grogues de pintura! 🛣️
+    fillRect(g, p.x, p.y, p.w, p.h, '#37474f');
+    fillRect(g, p.x, p.y, p.w, 8, '#546e7a');
+    strokeRect(g, p.x, p.y, p.w, p.h, '#263238', 3);
+    // ratlla discontinua del mig de la carretera
+    for (let sx = p.x + 10; sx < p.x + p.w - 20; sx += 46)
+      fillRect(g, sx, p.y + 14, 24, 6, '#ffd54f');
+  } else if (p.type === 'bridge') {
+    // PONT de ferro sobre el mar: bigues i reblons! 🌉
+    fillRect(g, p.x, p.y, p.w, p.h, '#78909c');
+    fillRect(g, p.x, p.y, p.w, 7, '#b0bec5');
+    strokeRect(g, p.x, p.y, p.w, p.h, '#455a64', 3);
+    // enreixat de sota el pont
+    for (let sx = p.x; sx < p.x + p.w; sx += 40)
+      linea(g, sx, p.y + p.h, sx + 20, p.y + p.h + 16, '#546e7a', 3);
+    for (let sx = p.x + 16; sx < p.x + p.w; sx += 40)
+      fillRect(g, sx, p.y + 3, 4, 4, '#eceff1');
+  } else if (p.type === 'rail') {
+    // RAILS de vagoneta: llistons de fusta amb dues barres de ferro! 🛤️
+    fillRect(g, p.x, p.y, p.w, p.h, '#3e2c20');            // terra fosca
+    // llistons de fusta travessats
+    for (let sx = p.x + 4; sx < p.x + p.w - 6; sx += 28)
+      fillRect(g, sx, p.y + 4, 16, 14, '#6d4c41');
+    // les dues barres de ferro que brillen!
+    fillRect(g, p.x, p.y + 1, p.w, 5, '#90a4ae');
+    fillRect(g, p.x, p.y + 16, p.w, 5, '#90a4ae');
+    fillRect(g, p.x, p.y, p.w, 2, '#cfd8dc');
   } else if (p.type === 'qblock') {
     // bloc "?" sorpresa — gris si ja l'has fet servir
     stamp('qb_' + platforms.indexOf(p), p.used ? 'qblock_used' : 'qblock', p.x, p.y);
@@ -972,8 +1401,13 @@ function drawFlag() {
   const g = gWorld;
   // pal
   fillRect(g, flag.x, flag.y, 8, 100, '#8b5a2b');
-  // bandera que oneja
+  // bandera que oneja (al 17 és QUADRICULADA de cursa!! 🏁)
   const wave = Math.sin(frame*0.1)*4;
+  if (levelNum === 17) {
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++)
+      fillRect(g, flag.x + 8 + i * 16, flag.y + 5 + j * 12 + Math.sin(frame*0.1 + i)*3, 16, 12,
+               (i + j) % 2 ? '#212121' : '#ffffff');
+  } else
   triangle(g, flag.x + 8, flag.y + 5, flag.x + 70, flag.y + 20 + wave, flag.x + 8, flag.y + 40, '#ff5252');
   // estrella
   textStamp('bandera_estrella', '★', flag.x + 26, flag.y + 24, {size: 20, color: '#ffd700', font: 'serif'});
@@ -1115,6 +1549,108 @@ function drawBossCos(e) {
     // boca amb dents quadrades com el dibuix!
     fillRect(g, cx - 22, cy + 12, 44, 16, '#37474f');
     for (let i = 0; i < 4; i++) fillRect(g, cx - 20 + i*11, cy + 13, 9, 7, '#ffffff');
+  } else if (e.cobra) {
+    // LA COBRA GEGANT!!! 🐍 surt del mar, enorme i amb caputxa!
+    const c = e.hurt > 0 ? '#ffffff' : '#43a047';
+    const dark = e.hurt > 0 ? '#ffffff' : '#1b5e20';
+    const capX = e.vx > 0 ? e.x + e.w - 30 : e.x + 30;   // el cap va al davant!
+    // el cos fa ones dins de l'aigua — cercles que s'enfonsen
+    for (let i = 0; i < 5; i++) {
+      const sx = e.x + 30 + i * (e.w - 60) / 4;
+      const sy = e.y + 50 + Math.sin(frame * 0.07 + i * 1.3) * 16;
+      fillCirc(g, sx, sy, 24 - i * 2, c);
+      fillCirc(g, sx - 5, sy - 8, 8, 'rgba(255,255,255,0.25)');   // brillantor d'escates
+    }
+    // LA CUA — el punt dèbil! brilla i parpelleja amb ets daurats ✨
+    const cua = cuaCobra(e);
+    fillElli(g, cua.x + cua.w / 2, cua.y + cua.h / 2, cua.w / 2 + 8, cua.h / 2, '#ffd700');
+    fillElli(g, cua.x + cua.w / 2, cua.y + cua.h / 2, cua.w / 2 - 4, cua.h / 2 - 10, c);
+    if (frame % 30 < 15)
+      for (let i = 0; i < 3; i++)
+        fillCirc(g, cua.x + 10 + i * 16, cua.y - 8 + Math.sin(frame * 0.15 + i) * 5, 4, '#fff59d');
+    // el coll amb CAPUTXa de cobra que s'aixeca del mar!
+    const ny = e.y + Math.sin(frame * 0.05) * 8;   // el cap oneja
+    corba(g, capX + (e.vx > 0 ? -60 : 60), e.y + 70, capX + (e.vx > 0 ? -30 : 30), ny + 10, capX, ny, c, 26);
+    fillElli(g, capX, ny + 14, 34, 40, c);                      // la caputxa oberta!
+    strokeElli(g, capX, ny + 14, 34, 40, dark, 3);
+    fillElli(g, capX, ny + 14, 22, 28, e.hurt > 0 ? '#ffffff' : '#c5e1a5');  // interior clar
+    // el CAP amb ulls hipnòtics i ullals!
+    fillElli(g, capX, ny - 14, 20, 16, c);
+    fillCirc(g, capX - 8, ny - 18, 7, '#ffffff');  fillCirc(g, capX + 8, ny - 18, 7, '#ffffff');
+    fillCirc(g, capX - 7, ny - 18, 3, '#e53935');  fillCirc(g, capX + 9, ny - 18, 3, '#e53935');
+    // celles de serp dolenta!
+    linea(g, capX - 15, ny - 28, capX - 4, ny - 23, dark, 3);
+    linea(g, capX + 15, ny - 28, capX + 4, ny - 23, dark, 3);
+    // ullals i la llengua bifurcada que entra i surt!!
+    triangle(g, capX - 6, ny - 2, capX - 2, ny - 2, capX - 4, ny + 8, '#ffffff');
+    triangle(g, capX + 2, ny - 2, capX + 6, ny - 2, capX + 4, ny + 8, '#ffffff');
+    if (frame % 30 < 12) {
+      linea(g, capX + (e.vx > 0 ? 18 : -18), ny - 12, capX + (e.vx > 0 ? 34 : -34), ny - 12, '#ff5252', 3);
+      linea(g, capX + (e.vx > 0 ? 34 : -34), ny - 12, capX + (e.vx > 0 ? 40 : -40), ny - 16, '#ff5252', 2);
+      linea(g, capX + (e.vx > 0 ? 34 : -34), ny - 12, capX + (e.vx > 0 ? 40 : -40), ny - 8, '#ff5252', 2);
+    }
+    // esquitxades d'aigua on el cos toca el mar!! 💦
+    for (let i = 0; i < 4; i++) {
+      const wx = e.x + 40 + i * (e.w - 80) / 3;
+      fillCirc(g, wx, 505 - ((frame + i * 20) % 40) * 0.6, 3, '#b3e5fc', 0.7);
+    }
+  } else if (e.kamekBoss) {
+    // EN KAMEK GEEEANT!!! 🧙✨ el mag més gran que has vist mai!
+    const cc = e.hurt > 0 ? '#ffffff' : '#7e57c2';
+    const blau = e.hurt > 0 ? '#ffffff' : '#81d4fa';
+    // l'escombreta gegant que el porta volant
+    const bs = Math.sin(frame * 0.05) * 4;
+    linea(g, e.x + e.w * 0.1, e.y + e.h - 10 + bs, e.x + e.w * 0.95, e.y + e.h + 6 + bs, '#8d6e63', 9);
+    for (let i = 0; i < 5; i++)
+      linea(g, e.x + e.w - 14, e.y + e.h + 2 + bs, e.x + e.w + 22, e.y + e.h - 10 + i * 7 + bs, '#d7a06a', 5);
+    // la túnica morada — gran i amb puntes de bruixot!
+    fillElli(g, cx, cy + 22, e.w * 0.38, e.h * 0.4, cc);
+    g.fillStyle(col(cc).color, 1);
+    g.beginPath();
+    g.moveTo(cx - e.w * 0.36, cy + e.h * 0.32);
+    g.lineTo(cx - e.w * 0.28, cy + e.h * 0.5);
+    g.lineTo(cx, cy + e.h * 0.38);
+    g.lineTo(cx + e.w * 0.28, cy + e.h * 0.5);
+    g.lineTo(cx + e.w * 0.36, cy + e.h * 0.32);
+    g.fillPath();
+    // els braços: un sosté la VARITA MÀGICA! 🪄
+    const wx = cx + (e.vx > 0 ? 40 : -40);
+    fillElli(g, wx, cy + 8, 10, 18, cc);
+    linea(g, wx, cy - 4, wx + (e.vx > 0 ? 26 : -26), cy - 34, '#8d6e63', 5);
+    fillCirc(g, wx + (e.vx > 0 ? 28 : -28), cy - 38, 7, '#ffd700');   // la punta daurada!
+    if (frame % 20 < 14)   // la varita llueix quan carrega l'atac!
+      for (let i = 0; i < 4; i++) {
+        const a = frame * 0.2 + i * 1.6;
+        fillCirc(g, wx + (e.vx > 0 ? 28 : -28) + Math.cos(a) * 14, cy - 38 + Math.sin(a) * 14, 3, '#e1bee7');
+      }
+    // el CAP blau amb les ulleres grogues de mag!
+    fillCirc(g, cx, cy - 28, 30, blau);
+    strokeCirc(g, cx, cy - 28, 30, e.hurt > 0 ? '#ffffff' : '#4a76a8', 3);
+    // ulleres rodones grogues — els seus ulls brillen dins!
+    fillCirc(g, cx - 12, cy - 30, 10, '#ffd700');
+    fillCirc(g, cx + 12, cy - 30, 10, '#ffd700');
+    fillCirc(g, cx - 11, cy - 30, 5, '#ffffff');
+    fillCirc(g, cx + 13, cy - 30, 5, '#ffffff');
+    fillCirc(g, cx - 10, cy - 30, 2.5, '#222222');
+    fillCirc(g, cx + 14, cy - 30, 2.5, '#222222');
+    // el BARRET punxegut gegant de bruixot!
+    g.fillStyle(col(e.hurt > 0 ? '#ffffff' : '#5e35b1').color, 1);
+    g.beginPath();
+    g.moveTo(cx - 38, cy - 46);
+    g.lineTo(cx + 38, cy - 46);
+    g.lineTo(cx + 14, cy - 92 - Math.sin(frame * 0.07) * 4);
+    g.lineTo(cx - 6, cy - 60);
+    g.fillPath();
+    fillRect(g, cx - 42, cy - 50, 84, 10, e.hurt > 0 ? '#ffffff' : '#4527a0');
+    // boca que riu quan està sa, oberta quan li fas mal!
+    if (e.hurt > 0) fillElli(g, cx, cy - 8, 8, 6, '#37474f');
+    else corba(g, cx - 10, cy - 10, cx, cy - 4, cx + 10, cy - 12, '#37474f', 3);
+    // espurnes màgiques que l'envolten!! ✨
+    for (let i = 0; i < 5; i++) {
+      const a = frame * 0.1 + i * 1.26;
+      fillCirc(g, cx + Math.cos(a) * (e.w * 0.48), cy + Math.sin(a) * (e.h * 0.45),
+               4, i % 2 ? '#e1bee7' : '#ffd700', 0.9);
+    }
   } else if (e.flyking) {
     // EL FLY GUY GEGANT, REI DEL CASTELL!! 🧢👑
     stamp('boss_flyking', e.hurt > 0 ? 'fly_white_a' : (frame % 8 < 4 ? 'fly_red_a' : 'fly_red_b'),
@@ -1139,6 +1675,191 @@ function drawBossCos(e) {
   // cors de vida del boss
   for (let i = 0; i < e.hp; i++)
     stamp('boss_heart_' + i, 'heart', e.x + e.w/2 - 40 + i * 28, e.y - 44);
+}
+
+// ==================== LA MÀQUINA D'OUS!! 🥚 ====================
+// una màquina de ferro amb una cistella: toca-la i t'omple els ous!
+function drawMaquina(m) {
+  const g = gWorld;
+  const x = m.x, y = m.y;         // y = a dalt de la plataforma
+  if (offscreen(x, 120)) return;
+  // cos de la màquina: caixa de ferro blavosa amb reblons
+  fillRect(g, x - 26, y - 44, 52, 44, '#78909c');
+  strokeRect(g, x - 26, y - 44, 52, 44, '#37474f', 3);
+  fillRect(g, x - 26, y - 44, 52, 8, '#90a4ae');
+  for (const rx of [-18, 0, 18]) fillCirc(g, x + rx, y - 8, 3, '#546e7a');
+  // la cistella d'ous a dalt — plena d'ous blancs!
+  fillRect(g, x - 20, y - 56, 40, 14, '#8d6e63');
+  strokeRect(g, x - 20, y - 56, 40, 14, '#4e342e', 2);
+  for (let i = 0; i < 3; i++)
+    fillElli(g, x - 12 + i * 12, y - 58, 6, 7, '#fffde7');
+  // llumeta que parpelleja: VERD = a punt, VERMELL = recarregant!
+  fillCirc(g, x, y - 34, 6, m.t > 0 ? '#ff5252' : '#69f0ae');
+  strokeCirc(g, x, y - 34, 6, '#37474f', 2);
+  // cartell amb un ou perquè es vegi què és! 🥚
+  stamp('maq_ou_' + (x | 0), 'egg', x - 10, y - 86 + Math.sin(frame * 0.1) * 3);
+  textStamp('maq_txt_' + (x | 0), 'OUS!', x - 22, y - 70, {size: 13, color: '#ffd700'});
+}
+
+// ==================== KAMEK, EL MAG!! 🧙 ====================
+// vola amb l'escombreta, llança l'encanteri i marxa rient!
+function drawKamek() {
+  if (!kamek || offscreen(kamek.x, 200)) return;
+  const g = gWorld;
+  const x = kamek.x, y = kamek.y;
+  const c = kamek.marxa ? '#9575cd' : '#7e57c2';   // túnica morada
+  // l'escombreta!
+  linea(g, x - 30, y + 22, x + 30, y + 30, '#8d6e63', 5);
+  for (let i = 0; i < 4; i++)
+    linea(g, x + 24, y + 28, x + 42, y + 20 + i * 4, '#d7a06a', 3);
+  // cos amb la túnica morada
+  fillElli(g, x, y + 8, 16, 20, c);
+  // cap amb els ulls grocs de mag!
+  fillCirc(g, x, y - 16, 13, '#81d4fa');
+  fillCirc(g, x - 5, y - 16, 4, '#ffd700');
+  fillCirc(g, x + 5, y - 16, 4, '#ffd700');
+  // el barret punxegut de mag!
+  g.fillStyle(col('#5e35b1').color, 1);
+  g.beginPath();
+  g.moveTo(x - 16, y - 24); g.lineTo(x + 16, y - 24); g.lineTo(x + 4, y - 52); g.fillPath();
+  fillRect(g, x - 18, y - 26, 36, 5, '#4527a0');
+  // espurnes màgiques mentre fa l'encanteri!! ✨
+  if (!kamek.marxa)
+    for (let i = 0; i < 4; i++) {
+      const a = frame * 0.15 + i * 1.6;
+      fillCirc(g, x + Math.cos(a) * 34, y + Math.sin(a) * 24, 4, '#e1bee7');
+    }
+}
+
+// ==================== LA SERP i LA COBRA GEGANT!! 🐍 ====================
+// la serpeteta innocenta que Kamek transforma...
+function drawSerp(e) {
+  const g = gWorld;
+  if (offscreen(e.x, 120)) return;
+  const cy = e.y + e.h / 2;
+  // cos verd que fa ones
+  corba(g, e.x, cy + Math.sin(frame * 0.15) * 4, e.x + e.w / 2, cy - 10, e.x + e.w - 12, cy, '#66bb6a', 8);
+  // cap amb ull i llengua!
+  fillCirc(g, e.x + e.w - 8, cy - 4, 9, '#66bb6a');
+  fillCirc(g, e.x + e.w - 5, cy - 7, 3, '#ffffff');
+  fillCirc(g, e.x + e.w - 4, cy - 7, 1.6, '#222222');
+  if (frame % 40 < 10)
+    linea(g, e.x + e.w + 1, cy - 4, e.x + e.w + 10, cy - 7, '#ff5252', 2);   // la llengua!
+}
+
+// ==================== EL COTXE DE CURSES!! 🏎️ ====================
+// el kart del Poshi: vermell, ràpid i amb el conductor a dalt!
+function drawCotxe(p) {
+  const g = gWorld;
+  const baseY = p.y + p.h;                    // terra = sota el jugador
+  const cx = p.x + p.w / 2;
+  const parp = p.inv > 0 && frame % 6 < 3;    // pampallugueja quan t'has fet mal!
+  // fumeta del tub d'escapament — puuuf puuuf!
+  if (frame % 8 < 4)
+    fillCirc(g, cx - 46 - (frame % 8) * 6, baseY - 14 - (frame % 8) * 2,
+             4 + (frame % 8), 'rgba(150,150,150,0.45)');
+  // el cos del cotxe: vermell de cursa amb franja blanca!
+  if (!parp) {
+    fillRect(g, cx - 44, baseY - 26, 88, 18, '#e53935');
+    fillElli(g, cx - 8, baseY - 28, 34, 14, '#e53935');      // cabina
+    fillElli(g, cx + 34, baseY - 24, 16, 10, '#e53935');     // morro
+    fillRect(g, cx - 44, baseY - 26, 88, 6, '#ffffff');      // franja blanca!
+    fillRect(g, cx + 24, baseY - 30, 22, 4, '#ffd54f');      // el nombre!
+    textStamp('cotxe_num', '7', cx + 35, baseY - 28, {size: 10, color: '#e53935'});
+    // aleta del darrere — va molt ràpid!
+    fillRect(g, cx - 48, baseY - 40, 6, 16, '#b71c1c');
+    fillRect(g, cx - 50, baseY - 44, 22, 6, '#e53935');
+  }
+  // les RODES que giren!! ⚙️
+  for (const rx of [cx - 28, cx + 28]) {
+    fillCirc(g, rx, baseY - 8, 12, '#212121');
+    fillCirc(g, rx, baseY - 8, 6, '#78909c');
+    // radis que giren amb la velocitat!
+    const a = frame * p.vx * 0.06;
+    linea(g, rx - Math.cos(a) * 10, baseY - 8 - Math.sin(a) * 10,
+          rx + Math.cos(a) * 10, baseY - 8 + Math.sin(a) * 10, '#b0bec5', 3);
+    linea(g, rx - Math.cos(a + 1.57) * 10, baseY - 8 - Math.sin(a + 1.57) * 10,
+          rx + Math.cos(a + 1.57) * 10, baseY - 8 + Math.sin(a + 1.57) * 10, '#b0bec5', 3);
+  }
+  // EL POSHI CONDUINT — el cap surt de la cabina! 🐤
+  const ph = 46;
+  const texP = ESCENA.textures.get(POSHI_TEX);
+  const pw = ph * texP.getSourceImage().width / texP.getSourceImage().height;
+  posa(poshiObj, POSHI_TEX, cx - pw / 2 - 6, baseY - 26 - ph + 6,
+       {flipX: false, scale: 1, alpha: parp ? 0.35 : 1});
+  poshiObj._img.setDisplaySize(pw, ph);
+  poshiObj._img.setDepth(8);
+  // el volant!
+  if (!parp) {
+    strokeCirc(g, cx + 8, baseY - 30, 6, '#37474f', 3);
+    linea(g, cx + 2, baseY - 26, cx + 8, baseY - 30, '#37474f', 3);
+  }
+}
+
+// ==================== LA VAGONETA DE MINA!! 🎢 ====================
+// corre pels rails i quan fa un LUPING gira sencera amb el cercle!!
+function drawVago(p) {
+  const g = gWorld;
+  const parp = p.inv > 0 && frame % 6 < 3;
+  const cx = p.x + p.w / 2, baseY = p.y + p.h;
+  const ang = p.loop ? p.loop.th - Math.PI/2 : 0;   // gira amb el luping!!
+
+  // el vagó gira al voltant del punt de contacte amb el rail!
+  g.save();
+  g.translateCanvas(cx, baseY);
+  g.rotateCanvas(ang);
+  if (!parp) {
+    // caixa del vagó: fusta fosca amb reblons
+    g.fillStyle(col('#795548').color, 1);
+    g.fillRect(-34, -34, 68, 22);
+    g.lineStyle(3, col('#4e342e').color, 1);
+    g.strokeRect(-34, -34, 68, 22);
+    // ribet metàl·lic de dalt
+    g.fillStyle(col('#90a4ae').color, 1);
+    g.fillRect(-36, -38, 72, 6);
+    // bigues de fusta del costat
+    g.lineStyle(3, col('#5d4037').color, 1);
+    g.beginPath();
+    g.moveTo(-24, -34); g.lineTo(-24, -12);
+    g.moveTo(0, -34);   g.lineTo(0, -12);
+    g.moveTo(24, -34);  g.lineTo(24, -12);
+    g.strokePath();
+    // peces d'or que porta dins! 💰 brillen!
+    g.fillStyle(col('#ffd700').color, 0.9);
+    g.fillRect(-18, -40, 10, 6); g.fillRect(-4, -42, 10, 8); g.fillRect(10, -40, 10, 6);
+    // les rodes del vagó (giren amb la velocitat!)
+    const a = frame * p.vx * 0.1;
+    for (const rx of [-20, 20]) {
+      g.fillStyle(col('#37474f').color, 1);
+      g.fillCircle(rx, -6, 9);
+      g.fillStyle(col('#78909c').color, 1);
+      g.fillCircle(rx, -6, 4);
+      g.lineStyle(2, col('#b0bec5').color, 1);
+      g.lineBetween(rx - Math.cos(a) * 8, -6 - Math.sin(a) * 8, rx + Math.cos(a) * 8, -6 + Math.sin(a) * 8);
+    }
+    // espurnes que salten dels rails quan corre! ⚡
+    if (!p.loop && frame % 6 < 3) {
+      g.fillStyle(col('#ffee58').color, 0.9);
+      g.fillRect(-26 - (frame % 6) * 3, -4, 4, 3);
+      g.fillRect(14 - (frame % 6) * 4, -3, 4, 3);
+    }
+  }
+  g.restore();
+
+  // EL POSHI DINS EL VAGÓ — també gira amb el luping!! 🐤
+  const ph = 44;
+  const texP = ESCENA.textures.get(POSHI_TEX);
+  const pw = ph * texP.getSourceImage().width / texP.getSourceImage().height;
+  // el Poshi seu a dins del vagó: posició rotada com el vagó!
+  const dxx = 10, dyy = -20;
+  const px2 = cx + Math.cos(ang) * dxx - Math.sin(ang) * dyy;
+  const py2 = baseY + Math.sin(ang) * dxx + Math.cos(ang) * dyy;
+  const im = posa(poshiObj, POSHI_TEX, px2, py2, {scale: 1, alpha: parp ? 0.35 : 1});
+  im.setDisplaySize(pw, ph);
+  im.setDepth(8);
+  im.setOrigin(0.5, 1);                          // gira des dels peus!
+  im.setRotation(ang);
+  im.setFlipX(false);
 }
 
 // ==================== EL POSHI I ELS SEUS TRUCS ====================

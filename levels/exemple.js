@@ -2,7 +2,7 @@
 // Copia aquest fitxer, canvia el número i fes el teu nivell!
 // Totes les mesures són píxels del món (la pantalla fa 960 x 540).
 
-registraNivell(15, {
+registraNivell(16, {
   titol: 'El meu nivell!',       // el cartell del començament
   fi: 3000,                       // fins on arriba el món
   flag: [2850, 380],              // on és la bandera final

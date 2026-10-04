@@ -1,13 +1,13 @@
 COM FER UN NIVELL NOU
 =====================
 
-1. Copia el fitxer "exemple.js" amb un nom nou, per exemple "nivell15.js".
-2. Canvia el número (15) i les dades: plataformes, enemics, fruites...
+1. Copia el fitxer "exemple.js" amb un nom nou, per exemple "nivell17.js".
+2. Canvia el número (17) i les dades: plataformes, enemics, fruites...
 3. Afegeix el nom del fitxer a la llista de "manifest.js":
      const FITXERS_NIVELLS = [
-       'nivell15.js',
+       'nivell17.js',
      ];
-4. Obre el joc amb: index.html?nivell=15
+4. Obre el joc amb: index.html?nivell=17
 
 Tipus de plataformes que pots fer servir:
   ground  rock  sand  snow  cloud  balloon  spikes  choco
@@ -24,5 +24,18 @@ Enemics (files a "enemics"):
   ['spiky', x, minX, maxX, terra]          → eriço que punxa (no es xafa!)
   ['boss', {x, y, baseY, w, h, vx, minX, maxX, hp}] → BOSS gegant!
 
-Per què el número 15? Els nivells 1-14 ja existeixen!
-Pots fer servir qualsevol número a partir del 15.
+Per què el número 17? Els nivells 1-16 ja existeixen!
+Pots fer servir qualsevol número a partir del 17.
+
+Coses noves que va portar el nivell 15 (el castell volador):
+  maquines:   [[x, terra]]     → màquina que omple els ous al tocar-la! 🥚
+  kamek:      x                → el mag Kamek apareix quan passes d'aquí! 🧙
+  kamekGran:  true             → en Kamek ES FA GEGANT i lluita ell mateix!
+  enemics:    ['serp', x, minX, maxX, altura]  → serp màgica (no es pot matar!)
+              ['cobra', {...}] → cobra gegant: NOMÉS li fas mal a la CUA! 🐍
+
+Modes especials de nivell (del 17 i el 18):
+  cotxe:      true             → el Poshi porta cotxe: corre SOL, tu SALTES!
+  vago:       true             → vagoneta de mina: corre sola amb LUPINGS!
+  loopins:    [[x, rail, radi]]→ els cercles on la vagoneta dona la volta! 🎢
+  vides:      N                → quants cors comença el jugador (normalment 3)

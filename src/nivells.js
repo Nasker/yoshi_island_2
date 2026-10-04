@@ -6,6 +6,13 @@
 
 const platforms = [], pipes = [], doors = [], mines = [], enemies = [], plants = [];
 const heals = [], starPicks = [], pads = [], fruits = [];
+const maquines = [];          // màquines de recarregar ous! 🥚
+let kamek = null;             // l'esdeveniment del mag Kamek (null = no hi és)
+let KAMEK_X = -1;             // on apareix Kamek (o -1 si el nivell no en té)
+let KAMEK_GRAN = false;       // si és cert, en Kamek ES FA GEGANT i lluita ell mateix!
+let COTXE = false;            // mode COTXE: el cotxe corre sol, tu saltes! 🏎️
+let VAGO = false;             // mode VAGONETA: com el cotxe però amb LUPINGS! 🎢
+const loopins = [];           // els cercles dels lupings: {x, y, r}
 const popups = [];
 function pop(text, x, y, color) {
   popups.push({text, x, y, color, life: 50});
@@ -1177,6 +1184,532 @@ LEVELS[14] = {
   ],
 };
 
+// ---------------------------------------------------------------
+// NIVELL 15: EL CASTELL VOLADOR!! 🏰☁️
+// La idea de l'Unai: un castell que VOLA, molt llarg i cada tros
+// diferent. Al final ve el mag KAMEK i transforma una serp en una
+// COBRA GEGANT — la lluita és sobre el MAR i només li pots fer mal
+// a la CUA amb ous! Hi ha màquines per recarregar ous. 🥚🐍
+LEVELS[15] = {
+  titol: '🏰 EL CASTELL VOLADOR! Kamek trama alguna cosa...',
+  fi: 14200, flag: [13900, 330], seguent: 0,
+  kamek: 11500,              // quan passes d'aquí, KAMEK apareix!!
+
+  plataformes: [
+    // ===== 1. ARRIBADA ENTRE NÚVOLS (0-1400) =====
+    {x:0,    y:480, w:300,  h:60,  type:'cloud'},
+    {x:380,  y:430, w:120,  h:30,  type:'cloud'},
+    {x:560,  y:370, w:120,  h:30,  type:'cloud', move:true, baseY:370, amp:40, speed:0.03, phase:0},
+    {x:760,  y:310, w:110,  h:30,  type:'cloud'},
+    {x:950,  y:250, w:110,  h:30,  type:'cloud', move:true, baseY:250, amp:50, speed:0.026, phase:1},
+    {x:1150, y:310, w:120,  h:30,  type:'cloud'},
+    {x:1330, y:400, w:170,  h:40,  type:'cloud'},
+
+    // ===== 2. EL PONT DEL CASTELL (1400-2700) =====
+    {x:1500, y:470, w:1200, h:70,  type:'tower'},
+    {x:1700, y:460, w:160,  h:20,  type:'spikes', hurt:true},
+    {x:2200, y:460, w:160,  h:20,  type:'spikes', hurt:true},
+    {x:2750, y:390, w:120,  h:24,  type:'metal'},
+
+    // ===== 3. LA CUINA DEL CEL (2700-4100) — pots de xocolata i lego! =====
+    {x:2900, y:430, w:220,  h:50,  type:'choco'},
+    {x:3180, y:370, w:160,  h:40,  type:'lego'},
+    {x:3420, y:430, w:200,  h:50,  type:'choco'},
+    {x:3700, y:350, w:150,  h:40,  type:'lego'},
+    {x:3920, y:430, w:200,  h:50,  type:'choco'},
+    {x:2900, y:480, w:1220, h:60,  type:'metal'},
+
+    // ===== 4. LES TORRES (4100-5400) — pujada! =====
+    {x:4180, y:430, w:130,  h:110, type:'tower'},
+    {x:4420, y:380, w:120,  h:30,  type:'tower'},
+    {x:4640, y:330, w:120,  h:30,  type:'tower'},
+    {x:4880, y:270, w:140,  h:270, type:'tower'},     // la torre gran!
+    {x:5150, y:330, w:120,  h:30,  type:'tower'},
+    {x:5100, y:460, w:140,  h:20,  type:'spikes', hurt:true},
+    {x:5300, y:420, w:300,  h:60,  type:'tower'},
+
+    // ===== 5. ELS MOTORS MÀGICS (5400-6800) — globus i núvols motors! =====
+    {x:5680, y:430, w:90,   h:40,  type:'balloon', move:true, baseY:430, amp:50, speed:0.03, phase:0},
+    {x:5900, y:380, w:90,   h:40,  type:'balloon'},
+    {x:6120, y:430, w:90,   h:40,  type:'balloon', move:true, baseY:430, amp:55, speed:0.026, phase:2},
+    {x:6340, y:360, w:90,   h:40,  type:'balloon'},
+    {x:6560, y:420, w:90,   h:40,  type:'balloon', move:true, baseY:420, amp:45, speed:0.032, phase:1},
+    {x:5600, y:480, w:1100, h:60,  type:'metal'},
+
+    // ===== 6. LA BIBLIOTECA FOSCA (6800-8200) =====
+    {x:6850, y:460, w:200,  h:80,  type:'night'},
+    {x:7120, y:400, w:140,  h:40,  type:'night'},
+    {x:7340, y:340, w:140,  h:40,  type:'night'},
+    {x:7560, y:400, w:140,  h:40,  type:'night'},
+    {x:7780, y:460, w:200,  h:80,  type:'night'},
+    {x:7080, y:480, w:300,  h:20,  type:'spikes', hurt:true},
+    {x:7500, y:480, w:260,  h:20,  type:'spikes', hurt:true},
+
+    // ===== 7. LA TERRASSA DE GEL (8200-9600) =====
+    {x:8050, y:470, w:260,  h:70,  type:'snow'},
+    {x:8380, y:430, w:200,  h:40,  type:'snow'},
+    {x:8660, y:470, w:180,  h:70,  type:'snow'},
+    {x:8920, y:410, w:180,  h:40,  type:'snow'},
+    {x:9180, y:470, w:220,  h:70,  type:'snow'},
+
+    // ===== 8. EL PATI VOLADOR (9600-11200) =====
+    {x:9450, y:480, w:1700, h:60,  type:'ground'},
+    {x:9800, y:410, w:160,  h:40,  type:'rock'},
+    {x:10100,y:350, w:150,  h:40,  type:'rock'},
+    {x:10400,y:410, w:160,  h:40,  type:'rock'},
+    {x:10700,y:350, w:150,  h:40,  type:'rock'},
+    {x:11000,y:410, w:160,  h:40,  type:'rock'},
+
+    // ===== 9. SOBRE EL MAR!! 🌊 (11200-14200) =====
+    // plataformes flotants — si caues a l'aigua, ai!
+    {x:11300,y:450, w:280,  h:40,  type:'metal'},
+    {x:11700,y:430, w:320,  h:40,  type:'metal'},
+    {x:12200,y:450, w:340,  h:40,  type:'metal'},
+    {x:12700,y:430, w:340,  h:40,  type:'metal'},
+    {x:13200,y:450, w:320,  h:40,  type:'metal'},
+    {x:13680,y:430, w:360,  h:110, type:'tower'},   // la plataforma de la bandera!
+    {x:12100,y:300, w:100,  h:24,  type:'cloud'},
+    {x:12850,y:290, w:100,  h:24,  type:'cloud'},
+    {x:12080,y:360, w:90,   h:24,  type:'cloud'},   // boires per no caure al mar!
+    {x:13560,y:340, w:90,   h:24,  type:'cloud'},
+  ],
+
+  enemics: [
+    // pont del castell
+    ['shy',   1750, 1600, 2100, 'blue'],
+    ['shy',   2350, 2200, 2650, 'red'],
+    // cuina
+    ['fly',   3050, 2900, 3300, 300],
+    ['fly',   3650, 3450, 3900, 280],
+    // torres
+    ['fly',   4500, 4300, 4900, 200],
+    ['spiky', 5350, 5300, 5560],
+    // motors
+    ['fly',   6000, 5700, 6500, 250],
+    ['fly',   6400, 6100, 6700, 300],
+    // biblioteca fosca
+    ['shy',   7200, 7080, 7400, 'blue'],
+    ['spiky', 7700, 7620, 7950],
+    ['fly',   7400, 7100, 7800, 250],
+    // terrassa de gel
+    ['fly',   8500, 8200, 8900, 300],
+    ['shy',   8700, 8400, 9100, 'blue'],
+    ['shy',   9300, 9100, 9400, 'blue'],
+    // pati volador
+    ['shy',   9700, 9500, 10000,'red'],
+    ['shy',   10200,10000,10600,'green'],
+    ['shy',   10800,10600,11100,'red'],
+    ['fly',   10500,10000,11000,250],
+    // SOBRE EL MAR: la serp que el Kamek transformarà!! 🐍
+    ['serp',  12250, 12210, 12500, 450],
+  ],
+
+  // la COBRA GEGANT només surt quan Kamek transforma la serp!
+  // (es crea des de l'esdeveniment del joc — no està aquí)
+
+  maquines: [
+    [11850, 430],   // màquina d'ous a l'inici de l'arena!
+    [12950, 430],   // i una altra al mig de la lluita!
+    [13800, 430],   // una darrera a la plataforma de la bandera!
+  ],
+
+  tubs: [],
+  portes: [],
+  plantes:  [[3000, 430], [3550, 430], [4000, 430], [9800, 480], [10450, 480]],
+  mines:    [[5750, 300], [6250, 250], [6600, 320]],
+  cors:     [[4450, 340], [10100, 380], [11750, 390]],
+  estrelles:[[9650, 420]],
+  trampolins:[[4160, 470], [8020, 470]],
+  blocs:    [[3260, 290], [8700, 350], [10600, 330], [12600, 330]],
+  fruitaSola: [
+    [450, 380, 'coin'], [810, 270, 'apple'],
+    [1550, 420, 'coin'], [1900, 420, 'apple'], [2500, 420, 'coin'],
+    [3100, 340, 'grape'], [3500, 360, 'apple'], [3800, 310, 'melon'],
+    [4250, 380, 'coin'], [4700, 290, 'apple'], [4950, 230, 'melon'],
+    [5750, 350, 'coin'], [6000, 320, 'coin'], [6450, 330, 'melon'],
+    [7200, 360, 'apple'], [7450, 300, 'grape'], [7850, 420, 'apple'],
+    [8450, 390, 'coin'], [9000, 370, 'apple'], [9300, 430, 'coin'],
+    [9900, 430, 'apple'], [10300, 320, 'melon'], [10800, 430, 'grape'],
+    [11500, 400, 'coin'], [12000, 380, 'coin'], [13400, 400, 'melon'],
+  ],
+};
+
+// ---------------------------------------------------------------
+// NIVELL 16: EL CASTELL DE VOLCANS D'EN KAMEK!! 🌋🧙
+// La idea de l'Unai: el castell d'en Kamek dins dels volcans,
+// mooolt llarg i difícil però possible. Al final surts al MAR,
+// en Kamek se't posa DAVANT com el Bowser Jr, es fa ENORME
+// i lluites amb ell! Hi ha màquines d'ous per recarregar. 🥚
+LEVELS[16] = {
+  titol: '🌋 EL CASTELL DE VOLCANS! En Kamek t\'espera...',
+  fi: 14500, flag: [14250, 330], seguent: 0,
+  kamek: 12900, kamekGran: true,   // a partir d'aquí en Kamek surt a lluitar!
+
+  plataformes: [
+    // ===== 1. EL CAMÍ DE LAVA (0-1600) =====
+    {x:0,    y:470, w:400,  h:70,  type:'rock'},
+    {x:480,  y:440, w:160,  h:40,  type:'rock'},
+    {x:720,  y:400, w:140,  h:40,  type:'rock'},
+    {x:940,  y:440, w:160,  h:40,  type:'rock'},
+    {x:1180, y:470, w:380,  h:70,  type:'rock'},
+    {x:1350, y:450, w:120,  h:20,  type:'spikes', hurt:true},
+
+    // ===== 2. LES PORTES DEL CASTELL (1600-3000) =====
+    {x:1600, y:470, w:500,  h:70,  type:'tower'},
+    {x:1750, y:450, w:140,  h:20,  type:'spikes', hurt:true},
+    {x:2180, y:420, w:180,  h:40,  type:'tower'},
+    {x:2440, y:370, w:150,  h:40,  type:'tower'},
+    {x:2680, y:420, w:180,  h:40,  type:'tower'},
+    {x:2940, y:470, w:200,  h:70,  type:'tower'},
+
+    // ===== 3. ELS GEISERS DE LAVA (3000-4500) =====
+    // plataformes que es MOUEN sobre la lava — ves amb compte!!
+    {x:3200, y:430, w:120,  h:30,  type:'metal', move:true, baseY:430, amp:60, speed:0.03,  phase:0},
+    {x:3500, y:380, w:120,  h:30,  type:'metal'},
+    {x:3800, y:430, w:120,  h:30,  type:'metal', move:true, baseY:430, amp:65, speed:0.026, phase:2},
+    {x:4100, y:360, w:130,  h:30,  type:'metal'},
+    {x:4380, y:430, w:130,  h:30,  type:'metal', move:true, baseY:430, amp:55, speed:0.034, phase:1},
+
+    // ===== 4. LA PUJADA DEL VOLCÀ (4500-6200) =====
+    // escales de torre que pugen i pugen!
+    {x:4550, y:460, w:130,  h:80,  type:'tower'},
+    {x:4780, y:410, w:110,  h:30,  type:'tower'},
+    {x:4990, y:360, w:110,  h:30,  type:'tower'},
+    {x:5200, y:310, w:110,  h:30,  type:'tower'},
+    {x:5410, y:260, w:110,  h:30,  type:'tower'},
+    {x:5620, y:310, w:110,  h:30,  type:'tower'},
+    {x:5830, y:360, w:110,  h:30,  type:'tower'},
+    {x:6040, y:460, w:180,  h:80,  type:'tower'},
+
+    // ===== 5. EL MENJADOR DEL CASTELL (6200-7800) =====
+    {x:6250, y:470, w:700,  h:70,  type:'choco'},
+    {x:6500, y:450, w:160,  h:20,  type:'spikes', hurt:true},
+    {x:7030, y:400, w:150,  h:40,  type:'lego'},
+    {x:7260, y:340, w:140,  h:40,  type:'lego'},
+    {x:7480, y:400, w:150,  h:40,  type:'lego'},
+    {x:7700, y:470, w:200,  h:70,  type:'choco'},
+
+    // ===== 6. EL FORN (7800-9400) =====
+    // canonades i plantes piraña — el lloc més calent del castell!
+    {x:7950, y:470, w:400,  h:70,  type:'pipec'},
+    {x:8430, y:420, w:140,  h:40,  type:'pipec'},
+    {x:8650, y:360, w:140,  h:40,  type:'pipec'},
+    {x:8870, y:420, w:140,  h:40,  type:'pipec'},
+    {x:9090, y:470, w:400,  h:70,  type:'pipec'},
+    {x:8500, y:450, w:110,  h:20,  type:'spikes', hurt:true},
+    {x:9180, y:450, w:110,  h:20,  type:'spikes', hurt:true},
+
+    // ===== 7. EL PONT TRENCAT (9400-11000) =====
+    // trossets petits sobre la lava — saltos justos!
+    {x:9550, y:450, w:90,   h:30,  type:'metal'},
+    {x:9760, y:410, w:80,   h:30,  type:'metal'},
+    {x:9970, y:450, w:90,   h:30,  type:'metal', move:true, baseY:450, amp:40, speed:0.03, phase:0},
+    {x:10180,y:400, w:80,   h:30,  type:'metal'},
+    {x:10390,y:450, w:90,   h:30,  type:'metal'},
+    {x:10600,y:410, w:80,   h:30,  type:'metal', move:true, baseY:410, amp:45, speed:0.027, phase:2},
+    {x:10810,y:460, w:90,   h:30,  type:'metal'},
+
+    // ===== 8. LA SALA FOSCA FINAL (11000-12400) =====
+    {x:11050,y:470, w:350,  h:70,  type:'night'},
+    {x:11500,y:420, w:140,  h:40,  type:'night'},
+    {x:11740,y:360, w:140,  h:40,  type:'night'},
+    {x:11980,y:420, w:140,  h:40,  type:'night'},
+    {x:12220,y:470, w:280,  h:70,  type:'night'},
+
+    // ===== 9. CAP AL MAR!! 🌊 (12400-14500) =====
+    {x:12550,y:470, w:300,  h:70,  type:'rock'},    // la sortida del volcà!
+    {x:12950,y:450, w:260,  h:40,  type:'metal'},
+    {x:13350,y:430, w:280,  h:40,  type:'metal'},
+    {x:13800,y:450, w:260,  h:40,  type:'metal'},
+    {x:14150,y:430, w:350,  h:110, type:'tower'},   // la plataforma de la bandera!
+    {x:13150,y:300, w:90,   h:24,  type:'cloud'},
+    {x:13700,y:290, w:90,   h:24,  type:'cloud'},
+  ],
+
+  enemics: [
+    // camí de lava
+    ['shy',   300,  100,  380,  'red'],
+    ['fly',   800,  500,  1100, 280],
+    // portes del castell
+    ['shy',   1700, 1620, 2060, 'blue'],
+    ['spiky', 2000, 1950, 2080],
+    ['fly',   2500, 2200, 2850, 250],
+    // geisers
+    ['fly',   3600, 3200, 4300, 250],
+    ['fly',   4100, 3500, 4400, 300],
+    // pujada del volcà
+    ['shy',   4600, 4570, 4660, 'red'],
+    ['fly',   5100, 4800, 5600, 220],
+    ['fly',   5700, 5300, 6100, 260],
+    ['spiky', 6100, 6060, 6200],
+    // menjador
+    ['shy',   6300, 6270, 6920, 'red'],
+    ['shy',   6800, 6600, 6920, 'blue'],
+    ['fly',   7300, 7050, 7650, 260],
+    // el forn
+    ['spiky', 8000, 7970, 8330],
+    ['fly',   8600, 8400, 9000, 240],
+    ['shy',   9200, 9110, 9470, 'red'],
+    // pont trencat
+    ['fly',   9800, 9500, 10800, 260],
+    ['fly',   10500,9900, 11000, 300],
+    // sala fosca
+    ['shy',   11100,11070,11370, 'blue'],
+    ['spiky', 11350,11300,11400],
+    ['fly',   11700,11500,12100, 240],
+    ['shy',   12300,12240,12480, 'red'],
+    // al mar: gavines dolentes (mosques) que t'espitxen!
+    ['fly',   13100,12950,13400, 250],
+    ['fly',   13700,13350,14000, 280],
+  ],
+
+  maquines: [
+    [13050, 450],   // ous a l'inici de l'arena del mar! 🥚
+    [13600, 430],   // i al mig!
+    [14300, 430],   // i al costat de la bandera!
+  ],
+
+  tubs: [],
+  portes: [],
+  plantes:  [[1750, 450], [6400, 450], [8100, 470], [9250, 470]],
+  mines:    [[3600, 300], [5050, 280], [7450, 260], [10050, 320], [11900, 300]],
+  cors:     [[2450, 320], [5450, 220], [7050, 350], [12550, 420]],
+  estrelles:[[9600, 400]],
+  trampolins:[[4520, 480], [12400, 480]],
+  blocs:    [[730, 320], [4200, 280], [6650, 370], [8900, 340], [11780, 300], [13400, 320]],
+  fruitaSola: [
+    [500, 380, 'coin'], [1150, 400, 'coin'],
+    [1900, 400, 'apple'], [2300, 360, 'coin'], [2750, 360, 'coin'],
+    [3300, 350, 'apple'], [3900, 350, 'coin'], [4200, 300, 'grape'],
+    [4800, 360, 'coin'], [5250, 260, 'apple'], [5650, 260, 'coin'], [6050, 420, 'apple'],
+    [6350, 420, 'coin'], [7100, 350, 'melon'], [7550, 350, 'coin'], [7750, 420, 'apple'],
+    [8200, 420, 'coin'], [8700, 310, 'grape'], [9300, 420, 'melon'],
+    [9800, 350, 'coin'], [10300, 350, 'apple'], [10800, 400, 'coin'],
+    [11200, 420, 'apple'], [11800, 300, 'coin'], [12350, 420, 'apple'],
+    [13000, 400, 'coin'], [13450, 380, 'melon'], [13900, 400, 'coin'],
+  ],
+};
+
+// ---------------------------------------------------------------
+// NIVELL 17: LA GRAN CURSA DE COTXES!! 🏎️🏁
+// La idea de l'Unai: vas AMB COTXE i fas un circuit molt llarg!
+// El cotxe accelera SOL — tu només SALTES obstacles, cons i forats.
+// De la ciutat al pont sobre el mar, el túnel, la costa i la META!
+LEVELS[17] = {
+  titol: '🏎️ LA GRAN CURSA! El cotxe corre sol — SALTA els obstacles!',
+  fi: 14500, flag: [14200, 380], seguent: 0,
+  cotxe: true,                    // mode conducció!
+  vides: 10,                      // a la cursa tens 10 vides!! ❤️❤️
+
+  plataformes: [
+    // ===== 1. EIXIDA DE LA CIUTAT (0-2600) — recta amb primers cons =====
+    {x:0,    y:480, w:2600, h:60,  type:'road'},
+    {x:700,  y:460, w:60,   h:20,  type:'spikes', hurt:true},
+    {x:1300, y:460, w:60,   h:20,  type:'spikes', hurt:true},
+    {x:1500, y:460, w:60,   h:20,  type:'spikes', hurt:true},
+    {x:2100, y:460, w:90,   h:20,  type:'spikes', hurt:true},
+
+    // ===== 2. LA PUJADA (2600-4600) — la carretera puja i baixa =====
+    {x:2600, y:450, w:400,  h:90,  type:'road'},
+    {x:3000, y:420, w:400,  h:120, type:'road'},
+    {x:3400, y:390, w:400,  h:150, type:'road'},
+    {x:3550, y:370, w:60,   h:20,  type:'spikes', hurt:true},
+    {x:3800, y:420, w:400,  h:120, type:'road'},
+    {x:4200, y:450, w:400,  h:90,  type:'road'},
+
+    // ===== 3. EL PONT SOBRE EL MAR (4600-6800) — FORATS!! =====
+    {x:4600, y:460, w:340,  h:30,  type:'bridge'},
+    {x:5060, y:460, w:300,  h:30,  type:'bridge'},
+    {x:5480, y:460, w:300,  h:30,  type:'bridge'},
+    {x:5900, y:460, w:320,  h:30,  type:'bridge'},
+    {x:6340, y:460, w:360,  h:30,  type:'bridge'},
+    {x:5150, y:440, w:50,   h:20,  type:'spikes', hurt:true},
+    {x:6000, y:440, w:50,   h:20,  type:'spikes', hurt:true},
+
+    // ===== 4. EL TÚNEL FOSC (6800-8800) — punxes del sostre! =====
+    {x:6800, y:470, w:2000, h:70,  type:'night'},
+    {x:7100, y:450, w:80,   h:20,  type:'spikes', hurt:true},
+    {x:7050, y:120, w:200,  h:20,  type:'spikes', hurt:true, down:true},
+    {x:7600, y:450, w:80,   h:20,  type:'spikes', hurt:true},
+    {x:7550, y:120, w:200,  h:20,  type:'spikes', hurt:true, down:true},
+    {x:8100, y:450, w:80,   h:20,  type:'spikes', hurt:true},
+    {x:8050, y:120, w:200,  h:20,  type:'spikes', hurt:true, down:true},
+
+    // ===== 5. LA COSTA (8800-11000) — sorra, palmeres i salts =====
+    {x:8800, y:480, w:600,  h:60,  type:'sand'},
+    {x:9100, y:460, w:60,   h:20,  type:'spikes', hurt:true},
+    {x:9520, y:480, w:500,  h:60,  type:'sand'},
+    {x:9750, y:460, w:90,   h:20,  type:'spikes', hurt:true},
+    {x:10140,y:480, w:460,  h:60,  type:'sand'},
+    {x:10350,y:460, w:60,   h:20,  type:'spikes', hurt:true},
+    {x:10720,y:480, w:380,  h:60,  type:'sand'},
+
+    // ===== 6. LA RECTA FINAL (11000-14500) — RÀPID, forats i cons! =====
+    {x:11100,y:480, w:700,  h:60,  type:'road'},
+    {x:11400,y:460, w:90,   h:20,  type:'spikes', hurt:true},
+    {x:11900,y:480, w:600,  h:60,  type:'road'},
+    {x:12150,y:460, w:60,   h:20,  type:'spikes', hurt:true},
+    {x:12600,y:480, w:650,  h:60,  type:'road'},
+    {x:12800,y:460, w:90,   h:20,  type:'spikes', hurt:true},
+    {x:13350,y:480, w:600,  h:60,  type:'road'},
+    {x:13550,y:460, w:60,   h:20,  type:'spikes', hurt:true},
+    {x:14050,y:480, w:450,  h:60,  type:'road'},
+  ],
+
+  enemics: [
+    // ocells que et venen de cara — esquiva'ls saltant!
+    ['fly',   1800, 1200, 2400, 300],
+    ['fly',   3200, 2700, 3800, 280],
+    ['fly',   5500, 4800, 6400, 320],
+    ['spiky', 7700, 6850, 8750],           // un oucellet del túnel?
+    ['fly',   9200, 8850, 10600, 300],
+    ['fly',   11600,11200,12400, 310],
+    ['spiky', 12900,12620,13150],
+    ['fly',   13600,13300,14200, 290],
+  ],
+
+  tubs: [],
+  portes: [],
+  plantes:  [[9300, 480], [10400, 480]],
+  mines:    [[2350, 440], [4850, 420], [5650, 420], [12300, 440], [13800, 440]],
+  cors:     [[4100, 340], [8600, 400], [13000, 420]],
+  estrelles:[[7700, 400]],                // estrella dins el túnel — INVENCIBLE! ⭐
+  trampolins:[],
+  blocs:    [[1650, 380], [5300, 380], [9600, 380], [12450, 380]],
+  fruitaSola: [
+    [900, 400, 'coin'], [1600, 400, 'coin'], [2250, 400, 'coin'],
+    [2800, 380, 'coin'], [3300, 330, 'coin'], [4000, 360, 'apple'],
+    [4800, 400, 'coin'], [5600, 400, 'coin'], [6500, 400, 'coin'],
+    [7200, 400, 'coin'], [7900, 400, 'coin'], [8400, 400, 'apple'],
+    [9200, 400, 'coin'], [9900, 400, 'coin'], [10500, 400, 'coin'],
+    [11300, 400, 'coin'], [12000, 400, 'melon'], [12900, 400, 'coin'],
+    [13600, 400, 'coin'], [14100, 400, 'coin'],
+  ],
+};
+
+// ---------------------------------------------------------------
+// NIVELL 18: LA VAGONETA AMB LUPINGS!! 🎢⛏️
+// La idea de l'Unai: vas amb una VAGONETA de mina que corre sola
+// i fas LUPINGS de veritat — la vagoneta dona la volta sencera!!
+// Per la mina més divertida: rails, cristalls, ratpenats i forats.
+LEVELS[18] = {
+  titol: '🎢 LA VAGONETA AMB LUPINGS! Agafa\'t fort!!',
+  fi: 22200, flag: [21700, 380], seguent: 0,
+  vago: true,                     // mode vagoneta!
+  vides: 6,                       // 6 vides per la bogeria de lupings
+
+  // els LUPINGS: [x del centre, alçada del rail, radi] — CINC lupings!!
+  // (dos d'ells són BESSONS — van un darrere l'altre com al Donkey Kong!)
+  loopins: [
+    [3600,  480, 120],
+    [8400,  480, 145],
+    [13800, 480, 125],
+    [15000, 480, 160],
+    [20600, 480, 175],
+  ],
+
+  plataformes: [
+    // ===== 1. L'ENTRADA DE LA MINA (0-3000) =====
+    {x:0,    y:480, w:1800, h:60,  type:'rail'},
+    {x:1900, y:480, w:1100, h:60,  type:'rail'},   // el primer forat!
+    {x:700,  y:460, w:60,   h:20,  type:'spikes', hurt:true},
+    {x:1400, y:460, w:60,   h:20,  type:'spikes', hurt:true},
+    {x:2200, y:460, w:60,   h:20,  type:'spikes', hurt:true},
+    {x:2700, y:460, w:60,   h:20,  type:'spikes', hurt:true},
+
+    // ===== 2. EL PRIMER LUPING!! (3000-4600) 🎢 =====
+    {x:3000, y:480, w:1600, h:60,  type:'rail'},
+    {x:4200, y:460, w:50,   h:20,  type:'spikes', hurt:true},
+
+    // ===== 3. LA BAIXADA DONKEY KONG! (4600-7800) =====
+    // els rails BAIXEN esglaonats amb forats — salts cap avall!!
+    {x:4600, y:440, w:600,  h:60,  type:'rail'},   // comença amunt!
+    {x:5350, y:480, w:520,  h:60,  type:'rail'},   // baixa 40!
+    {x:6050, y:515, w:520,  h:60,  type:'rail'},   // baixa més!
+    {x:6750, y:525, w:500,  h:60,  type:'rail'},   // el més baix de tot!
+    {x:7400, y:470, w:600,  h:60,  type:'rail'},   // SALT de tornada AMUNT!!
+    {x:5600, y:460, w:50,   h:20,  type:'spikes', hurt:true},
+    {x:6950, y:505, w:50,   h:20,  type:'spikes', hurt:true},
+
+    // ===== 4. EL LUPING GEGANT (8000-10400) 🎢 =====
+    {x:8000, y:480, w:2400, h:60,  type:'rail'},
+    {x:9200, y:460, w:50,   h:20,  type:'spikes', hurt:true},
+    {x:9800, y:460, w:50,   h:20,  type:'spikes', hurt:true},
+
+    // ===== 5. ELS PONTS TRENCATS (10400-13200) — salts estil DK!! =====
+    {x:10400,y:480, w:400,  h:60,  type:'rail'},
+    {x:11000,y:480, w:350,  h:60,  type:'rail'},   // forat de 200!
+    {x:11550,y:445, w:350,  h:60,  type:'rail'},   // forat i AMUNT 35!!
+    {x:12100,y:505, w:380,  h:60,  type:'rail'},   // forat i AVALL 60!!
+    {x:12700,y:480, w:500,  h:60,  type:'rail'},
+    {x:11200,y:460, w:50,   h:20,  type:'spikes', hurt:true},
+    {x:12900,y:460, w:50,   h:20,  type:'spikes', hurt:true},
+
+    // ===== 6. ELS LUPINGS BESONIERS!! (13200-16000) 🎢🎢 =====
+    // dos lupings seguits: 13800 i 15000 — aguanta la respiració!!
+    {x:13200,y:480, w:2800, h:60,  type:'rail'},
+    {x:13500,y:460, w:50,   h:20,  type:'spikes', hurt:true},
+    {x:15600,y:460, w:60,   h:20,  type:'spikes', hurt:true},
+
+    // ===== 7. LA COVA FOSCA (16000-19000) — baixada amb forats a raig =====
+    {x:16000,y:445, w:500,  h:60,  type:'rail'},   // amunt!
+    {x:16700,y:490, w:450,  h:60,  type:'rail'},   // baixa 45!
+    {x:17350,y:520, w:450,  h:60,  type:'rail'},   // baixa més!
+    {x:18000,y:525, w:600,  h:60,  type:'rail'},   // fons de la cova!
+    {x:18800,y:460, w:800,  h:60,  type:'rail'},   // MEGASALT de tornada!!
+    {x:16400,y:425, w:50,   h:20,  type:'spikes', hurt:true},
+    {x:17000,y:470, w:50,   h:20,  type:'spikes', hurt:true},
+    {x:18200,y:505, w:60,   h:20,  type:'spikes', hurt:true},
+    {x:19000,y:440, w:50,   h:20,  type:'spikes', hurt:true},
+
+    // ===== 8. EL MEGA LUPING FINAL + META (19600-22200) 🎢🏁 =====
+    {x:19600,y:480, w:2600, h:60,  type:'rail'},
+    {x:20000,y:460, w:50,   h:20,  type:'spikes', hurt:true},
+    {x:21200,y:460, w:60,   h:20,  type:'spikes', hurt:true},
+  ],
+
+  enemics: [
+    // ratpenats de la mina que volen cap a tu!
+    ['fly',   1200, 700,  2000, 280],
+    ['fly',   3200, 2800, 4200, 300],
+    ['fly',   5000, 4600, 5900, 260],
+    ['fly',   6600, 6200, 7600, 280],
+    ['fly',   9000, 8000, 10200,270],
+    ['fly',   11200,10400,12400,300],
+    ['fly',   14000,13200,15800,280],
+    ['fly',   17000,16000,18400,260],
+    ['fly',   19200,18600,20400,290],
+    ['fly',   21200,20800,22000,260],
+  ],
+
+  tubs: [],
+  portes: [],
+  plantes:  [],
+  mines:    [[1800, 440], [5600, 430], [9200, 430], [11800, 440],
+             [14200, 430], [17600, 450], [20000, 430]],
+  cors:     [[6400, 430], [12000, 380], [17000, 420], [21100, 380]],
+  estrelles:[[10500, 380], [18500, 420]],
+  trampolins:[],
+  blocs:    [[2400, 380], [5800, 360], [10800, 380], [13400, 380],
+             [17900, 380], [20900, 380]],
+  fruitaSola: [
+    [500, 400, 'coin'], [1100, 400, 'coin'], [1700, 400, 'coin'],
+    [2300, 400, 'coin'], [2900, 400, 'coin'],
+    [3600, 220, 'melon'],                          // dalt del luping 1!!
+    [4400, 400, 'coin'], [5450, 415, 'coin'], [6150, 430, 'coin'],
+    [6850, 440, 'coin'], [7600, 400, 'coin'],
+    [8400, 170, 'melon'],                          // dalt del luping gegant!!
+    [9600, 400, 'coin'], [10600, 400, 'coin'],
+    [11200, 400, 'coin'], [12300, 400, 'coin'], [13000, 400, 'coin'],
+    [13800, 210, 'melon'],                         // dalt del luping bessó!!
+    [15000, 140, 'melon'],                         // dalt del 2n bessó!!
+    [16200, 400, 'coin'], [17000, 420, 'coin'],
+    [18100, 440, 'coin'], [19000, 400, 'coin'],
+    [20600, 110, 'melon'],                         // dalt del MEGA luping!!!
+    [21400, 400, 'coin'],
+  ],
+};
+
 // ==================== CONSTRUCTOR DE NIVELLS ====================
 // Llegeix les DADES del nivell i omple les llistes del joc.
 // Això és el que converteix una fitxa de paper en un món jugable!
@@ -1215,6 +1748,12 @@ const CREADORS_ENEMICS = {
   peix:  t => fishAt(t[1], t[2], t[3], t[4]),
   spiky: t => spikyAt(t[1], t[2], t[3], t[4]),
   caca:  t => poopAt(t[1], t[2], t[3], t[4]),
+  serp:  t => enemies.push({x: t[1], y: (t[4]||480) - 18, baseY: (t[4]||480) - 18,
+                            w: 44, h: 18, vx: 1, minX: t[2], maxX: t[3],
+                            serp: true, fly: true,   // neda suaument al mar!
+                            alive: true, t: Math.random()*6}),
+  cobra: t => enemies.push(Object.assign(
+              {hurt: 0, alive: true, t: 0, boss: true, cobra: true}, t[1])),
   boss:  t => enemies.push(Object.assign(
               {hurt: 0, alive: true, t: 0, boss: true}, t[1])),
 };
@@ -1223,9 +1762,11 @@ function buildLevel(n) {
   levelNum = n;
   levelStart = frame;
   LEVEL_TOP = 0;
-  for (const a of [platforms, pipes, doors, mines, enemies, plants, heals, starPicks, pads, fruits])
+  for (const a of [platforms, pipes, doors, mines, enemies, plants, heals, starPicks, pads, fruits, maquines, loopins])
     a.length = 0;
   eggs.length = 0; popups.length = 0; shots.length = 0;
+  kamek = null; KAMEK_X = -1; KAMEK_GRAN = false; COTXE = false; VAGO = false;
+  player.loop = null;           // si quedaves a mig luping, ja no! 🎢
   musicI = 0; bassI = 0;   // la música del nou nivell comença de zero!
   babyBubble = null; shake = 0;
   player.x = 60; player.y = 400; player.vx = 0; player.vy = 0;
@@ -1252,6 +1793,15 @@ function buildLevel(n) {
   if (d.blocs)       for (const b of d.blocs)       qblock(b[0], b[1]);
   if (d.fruites)     for (const f of d.fruites)     addFruitLine(f[0], f[1], f[2], f[3], f[4]);
   if (d.fruitaSola)  for (const f of d.fruitaSola)  fruits.push({x: f[0], y: f[1], type: f[2], taken: false, bob: Math.random()*6});
+  if (d.maquines)    for (const m of d.maquines)    maquines.push({x: m[0], y: m[1], t: 0});
+  if (d.kamek !== undefined) KAMEK_X = d.kamek;   // el mag apareix quan passes d'aquí!
+  if (d.kamekGran) KAMEK_GRAN = true;             // i si vol lluitar ell, es fa GEGANT!
+  if (d.cotxe) COTXE = true;                      // mode CURSA: el cotxe corre sol! 🏎️
+  if (d.vago)  { VAGO = true; COTXE = true; }     // la vagoneta també corre sola! 🎢
+  if (d.loopins) for (const l of d.loopins) loopins.push({x: l[0], y: l[1], r: l[2]});
+  player.maxHearts = d.vides || 3;
+  if (d.vides) player.hearts = d.vides;               // nivells amb més vides! ❤️
+  player.hearts = Math.min(Math.max(player.hearts, 1), player.maxHearts);
   // un nivell també pot portar una funció "build" per fer coses especials
   if (d.build) d.build();
   // esborra els sprites del nivell anterior (només si el joc ja ha arrencat)

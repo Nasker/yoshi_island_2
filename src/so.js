@@ -107,6 +107,30 @@ const SONGS = {
            659,0,784,0, 880,1047,880,784, 659,587,523,0, 0,0,0,0],
     bass: [131, 165, 98, 131], step: 12, wave: 'sine',
     harm: -12, drums: 'k.....h.......h.'
+  },
+  15: { // CASTELL VOLADOR: èpica i voladora, com un cel ple de vent!! 🏰☁️
+    lead: [659,784,880,1047, 988,880,784,659, 587,659,784,880,
+           1047,1175,1047,880, 784,659,587,523, 659,784,880,0],
+    bass: [110, 131, 98, 110], step: 10, wave: 'square',
+    harm: -4, drums: 'k.hskshxk.hskshh'
+  },
+  16: { // CASTELL DE VOLCANS: fosca i perillosa, com el cau d'en Kamek!! 🌋
+    lead: [294,0,311,294, 262,0,294,311, 392,0,370,349, 311,294,262,0,
+           294,0,311,349, 392,440,392,349, 311,294,262,0, 0,0,0,0],
+    bass: [73, 82, 73, 98], step: 13, wave: 'sawtooth',
+    harm: -12, drums: 'k..s..ksh..s..ksh.'
+  },
+  17: { // LA GRAN CURSA: ràpida i moguda, com un cotxe a tota velocitat!! 🏎️
+    lead: [659,659,0,784, 880,784,659,0, 587,659,784,880,
+           1047,0,988,880, 784,659,587,523, 659,784,659,0],
+    bass: [131, 131, 165, 196], step: 8, wave: 'square',
+    harm: -5, drums: 'xhsxhhsxxhsxhhsx'
+  },
+  18: { // VAGONETA AMB LUPINGS: vertigen divertit, com una muntanya russa!! 🎢
+    lead: [523,659,784,659, 880,1047,880,784, 659,784,880,1047,
+           1175,1047,880,784, 659,523,587,659, 784,880,784,0],
+    bass: [131, 147, 165, 131], step: 9, wave: 'square',
+    harm: -7, drums: 'k.hxk.hxkh.hxk.hhs'
   }
 };
 let musicI = 0, bassI = 0;

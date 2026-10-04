@@ -381,6 +381,10 @@ function bakeTextures(scene) {
     grad_japan:   ['#ffd1e3', '#ffedc2'],
     grad_tower:   ['#3d3554', '#6a5f8a'],
     grad_night:   ['#0a1030', '#1d4a38'],
+    grad_fly:     ['#4fc3f7', '#e1f5fe'],   // el cel alt del castell volador! ☁️
+    grad_sea:     ['#37474f', '#4fc3f7'],   // cel de tempesta sobre el mar! 🌊
+    grad_volc:    ['#3d1a1a', '#c1440e'],   // cel de foc dels volcans! 🌋
+    grad_road:    ['#64b5f6', '#fff9c4'],   // dia de cursa: cel blau i sol! 🏎️
     grad_tokyo0:  ['#ff9e80', '#ffe0b2'],
     grad_tokyo1:  ['#10132e', '#2c3468'],
     grad_tokyo2:  ['#ff8fa3', '#b3e5fc'],
